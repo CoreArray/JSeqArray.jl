@@ -247,11 +247,16 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 			rv_ans = GDS_JArray_Read(N, NULL, NULL, ss, SV);
 
 		} else {
-			// with index
+/*			// with index
 			CIndex &V = File.VarIndex(name2);
 			int var_start, var_count;
 			vector<C_BOOL> var_sel;
+
+			jl_value_t **args;
+			JL_GC_PUSHARGS(args, 2);
+
 			jl_array_t *Index = V.GetLen_Sel(Sel.pVariant(), var_start, var_count, var_sel);
+			args[0] = Index;
 
 			C_BOOL *ss[2] = { &var_sel[0], NULL };
 			C_Int32 dimst[2]  = { var_start, 0 };
@@ -262,8 +267,11 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 				dimcnt[0] = var_count;
 			}
 			jl_array_t *Val = GDS_JArray_Read(N, dimst, dimcnt, ss, svCustom);
+			args[1] = Val;
 
 			rv_ans = Py_BuildValue("{s:N,s:N}", "index", Index, "data", Val);
+			JL_GC_POP();
+*/
 		}
 
 	} else if (strncmp(name, "annotation/format/@", 19) == 0)
@@ -280,7 +288,7 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 	{
 		// ===========================================================
 		// annotation/format
-
+/*
 		GDS_PATH_PREFIX_CHECK(name);
 		string name1 = string(name) + "/data";
 		string name2 = string(name) + "/@data";
@@ -300,6 +308,7 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 		jl_array_t *Val = GDS_JArray_Read(N, dimst, dimcnt, ss, svCustom);
 
 		rv_ans = Py_BuildValue("{s:N,s:N}", "index", Index, "data", Val);
+*/
 
 	} else if (strncmp(name, "sample.annotation/", 18) == 0)
 	{
@@ -349,8 +358,12 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 		char buf2[1024] = { 0 };
 		char *p1 = buf1, *p2 = buf2;
 		int dup = 0;
-		rv_ans = numpy_new_string(n1);
-		jl_array_t **p = (jl_array_t**)numpy_getptr(rv_ans);
+
+		jl_value_t *atype = jl_apply_array_type(jl_string_type, 1);
+		rv_ans = jl_alloc_array_1d(atype, n1);
+		JL_GC_PUSH1(&rv_ans);
+		jl_value_t **p = (jl_value_t**)jl_array_data(rv_ans);
+
 		for (size_t i=0; i < (size_t)n1; i++,p++)
 		{
 			snprintf(p1, sizeof(buf1), "%s_%d", chr[i].c_str(), pos[i]);
@@ -359,14 +372,18 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 				dup ++;
 				snprintf(p1, sizeof(buf1), "%s_%d_%d", chr[i].c_str(),
 					pos[i], dup);
-				numpy_setval(rv_ans, p, PYSTR_SET(p1));
+				*p = jl_cstr_to_string(p1);
+				jl_gc_wb(rv_ans, *p);
 			} else {
 				char *tmp;
 				tmp = p1; p1 = p2; p2 = tmp;
-				numpy_setval(rv_ans, p, PYSTR_SET(p2));
+				*p = jl_cstr_to_string(p2);
+				jl_gc_wb(rv_ans, *p);
 				dup = 0;
 			}
 		}
+
+		JL_GC_POP();
 
 	} else if (strcmp(name, "$num_allele") == 0)
 	{
@@ -374,8 +391,9 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 		// the number of distinct alleles
 
 		ssize_t nVariant = File.VariantSelNum();
-		rv_ans = numpy_new_int32(nVariant);
-		int *p = (int*)numpy_getptr(rv_ans);
+		jl_value_t *atype = jl_apply_array_type(jl_int32_type, 1);
+		rv_ans = jl_alloc_array_1d(atype, nVariant);
+		int *p = (int*)jl_array_data(rv_ans);
 
 		CApply_Variant_NumAllele NodeVar(File);
 		for (ssize_t i=0; i < nVariant; i++)
@@ -398,19 +416,15 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 
 
 /// Get data from a working space
-COREARRAY_DLL_EXPORT jl_array_t* SEQ_GetData(jl_array_t *self, jl_array_t *args)
+COREARRAY_DLL_EXPORT jl_array_t* SEQ_GetData(int file_id, const char *name)
 {
-	int file_id;
-	const char *name;
-	if (!PyArg_ParseTuple(args, "is", &file_id, &name))
-		return NULL;
-
 	COREARRAY_TRY
 		// File information
 		CFileInfo &File = GetFileInfo(file_id);
 		// Get data
 		return VarGetData(File, name);
-	COREARRAY_CATCH_NONE
+	COREARRAY_CATCH
+	return NULL;
 }
 
 } // extern "C"

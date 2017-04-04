@@ -43,7 +43,14 @@ Dr. Xiuwen Zheng ([zhengxwen@gmail.com](zhengxwen@gmail.com))
 
 #### Original paper (implemented in an [R/Bioconductor](http://bioconductor.org/packages/SeqArray) package):
 
+[SeqArray](http://bioconductor.org/packages/SeqArray)
+
 Zheng X, Gogarten S, Lawrence M, Stilp A, Conomos M, Weir BS, Laurie C, Levine D (2017). SeqArray -- A storage-efficient high-performance data format for WGS variant calls. *Bioinformatics*. [DOI: 10.1093/bioinformatics/btx145](http://dx.doi.org/10.1093/bioinformatics/btx145).
+
+#### Python package
+
+[PySeqArray](https://github.com/CoreArray/PySeqArray)
+
 
 
 ## SeqArray File Download
