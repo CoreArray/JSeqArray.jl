@@ -132,14 +132,14 @@ void CIndex::GetInfo(size_t pos, C_Int64 &Sum, int &Value)
 	Value = Values[AccIndex];
 }
 
-PyObject* CIndex::GetLen_Sel(const C_BOOL sel[])
+jl_array_t* CIndex::GetLen_Sel(const C_BOOL sel[])
 {
 	size_t n;
 	const C_BOOL *p = (C_BOOL *)vec_i8_cnt_nonzero_ptr((const int8_t *)sel,
 		TotalLength, &n);
 	// create a numpy array object
 	npy_intp dims[] = { n };
-	PyObject *ans = PyArray_SimpleNew(1, dims, NPY_INT32);
+	jl_array_t *ans = PyArray_SimpleNew(1, dims, NPY_INT32);
 	if (n > 0)
 	{
 		int *pV = &Values[0];
@@ -180,7 +180,7 @@ PyObject* CIndex::GetLen_Sel(const C_BOOL sel[])
 	return ans;
 }
 
-PyObject* CIndex::GetLen_Sel(const C_BOOL sel[], int &out_var_start,
+jl_array_t* CIndex::GetLen_Sel(const C_BOOL sel[], int &out_var_start,
 	int &out_var_count, vector<C_BOOL> &out_var_sel)
 {
 	size_t n;
@@ -188,7 +188,7 @@ PyObject* CIndex::GetLen_Sel(const C_BOOL sel[], int &out_var_start,
 		TotalLength, &n);
 	// create a numpy array object
 	npy_intp dims[] = { n };
-	PyObject *ans = PyArray_SimpleNew(1, dims, NPY_INT32);
+	jl_array_t *ans = PyArray_SimpleNew(1, dims, NPY_INT32);
 	out_var_start = 0;
 	out_var_count = 0;
 
@@ -1145,7 +1145,7 @@ COREARRAY_DLL_LOCAL string GDS_PATH_PREFIX(const string &path, char prefix)
 
 // import numpy functions
 #if (PY_MAJOR_VERSION >= 3)
-static PyObject* _init_() { import_array(); return Py_None; }
+static jl_array_t* _init_() { import_array(); return Py_None; }
 #else
 static void _init_() { import_array(); return NULL; }
 #endif
@@ -1163,76 +1163,76 @@ COREARRAY_DLL_LOCAL bool numpy_init()
 
 static const char *err_new_array = "Fails to allocate a new numpy array object.";
 
-static PyObject* new_array(size_t n, NPY_TYPES type)
+static jl_array_t* new_array(size_t n, NPY_TYPES type)
 {
 	npy_intp dims[1] = { n };
-	PyObject *rv = PyArray_SimpleNew(1, dims, type);
+	jl_array_t *rv = PyArray_SimpleNew(1, dims, type);
 	if (rv == NULL) throw ErrSeqArray(err_new_array);
 	return rv;
 }
 
 
-COREARRAY_DLL_LOCAL PyObject* numpy_new_uint8(size_t n)
+COREARRAY_DLL_LOCAL jl_array_t* numpy_new_uint8(size_t n)
 {
 	return new_array(n, NPY_UINT8);
 }
 
-COREARRAY_DLL_LOCAL PyObject* numpy_new_uint8_mat(size_t n1, size_t n2)
+COREARRAY_DLL_LOCAL jl_array_t* numpy_new_uint8_mat(size_t n1, size_t n2)
 {
 	npy_intp dims[2] = { n1, n2 };
-	PyObject *rv = PyArray_SimpleNew(2, dims, NPY_UINT8);
+	jl_array_t *rv = PyArray_SimpleNew(2, dims, NPY_UINT8);
 	if (rv == NULL) throw ErrSeqArray(err_new_array);
 	return rv;
 }
 
-COREARRAY_DLL_LOCAL PyObject* numpy_new_uint8_dim3(size_t n1, size_t n2, size_t n3)
+COREARRAY_DLL_LOCAL jl_array_t* numpy_new_uint8_dim3(size_t n1, size_t n2, size_t n3)
 {
 	npy_intp dims[3] = { n1, n2, n3 };
-	PyObject *rv = PyArray_SimpleNew(3, dims, NPY_UINT8);
+	jl_array_t *rv = PyArray_SimpleNew(3, dims, NPY_UINT8);
 	if (rv == NULL) throw ErrSeqArray(err_new_array);
 	return rv;
 }
 
 
-COREARRAY_DLL_LOCAL PyObject* numpy_new_int32(size_t n)
+COREARRAY_DLL_LOCAL jl_array_t* numpy_new_int32(size_t n)
 {
 	return new_array(n, NPY_INT32);
 }
 
-COREARRAY_DLL_LOCAL PyObject* numpy_new_int32_mat(size_t n1, size_t n2)
+COREARRAY_DLL_LOCAL jl_array_t* numpy_new_int32_mat(size_t n1, size_t n2)
 {
 	npy_intp dims[2] = { n1, n2 };
-	PyObject *rv = PyArray_SimpleNew(2, dims, NPY_INT32);
+	jl_array_t *rv = PyArray_SimpleNew(2, dims, NPY_INT32);
 	if (rv == NULL) throw ErrSeqArray(err_new_array);
 	return rv;
 }
 
-COREARRAY_DLL_LOCAL PyObject* numpy_new_int32_dim3(size_t n1, size_t n2, size_t n3)
+COREARRAY_DLL_LOCAL jl_array_t* numpy_new_int32_dim3(size_t n1, size_t n2, size_t n3)
 {
 	npy_intp dims[3] = { n1, n2, n3 };
-	PyObject *rv = PyArray_SimpleNew(3, dims, NPY_INT32);
+	jl_array_t *rv = PyArray_SimpleNew(3, dims, NPY_INT32);
 	if (rv == NULL) throw ErrSeqArray(err_new_array);
 	return rv;
 }
 
 
-COREARRAY_DLL_LOCAL PyObject* numpy_new_string(size_t n)
+COREARRAY_DLL_LOCAL jl_array_t* numpy_new_string(size_t n)
 {
 	return new_array(n, NPY_OBJECT);
 }
 
 
-COREARRAY_DLL_LOCAL bool numpy_is_array(PyObject *obj)
+COREARRAY_DLL_LOCAL bool numpy_is_array(jl_array_t *obj)
 {
 	return PyArray_Check(obj) != 0;
 }
 
-COREARRAY_DLL_LOCAL bool numpy_is_array_or_list(PyObject *obj)
+COREARRAY_DLL_LOCAL bool numpy_is_array_or_list(jl_array_t *obj)
 {
 	return PyList_Check(obj) || PyArray_Check(obj);
 }
 
-COREARRAY_DLL_LOCAL bool numpy_is_array_int(PyObject *obj)
+COREARRAY_DLL_LOCAL bool numpy_is_array_int(jl_array_t *obj)
 {
 	if (PyArray_Check(obj))
 	{
@@ -1243,18 +1243,18 @@ COREARRAY_DLL_LOCAL bool numpy_is_array_int(PyObject *obj)
 		return false;
 }
 
-COREARRAY_DLL_LOCAL bool numpy_is_uint8(PyObject *obj)
+COREARRAY_DLL_LOCAL bool numpy_is_uint8(jl_array_t *obj)
 {
 	return PyArray_TYPE(obj) == NPY_UINT8;
 }
 
-COREARRAY_DLL_LOCAL bool numpy_is_string(PyObject *obj)
+COREARRAY_DLL_LOCAL bool numpy_is_string(jl_array_t *obj)
 {
 	return PyArray_TYPE(obj) == NPY_OBJECT;
 }
 
 
-COREARRAY_DLL_LOCAL void* numpy_getptr(PyObject *obj)
+COREARRAY_DLL_LOCAL void* numpy_getptr(jl_array_t *obj)
 {
 	if (obj)
 		return PyArray_DATA(obj);
@@ -1262,13 +1262,13 @@ COREARRAY_DLL_LOCAL void* numpy_getptr(PyObject *obj)
 		return NULL;
 }
 
-COREARRAY_DLL_LOCAL void numpy_setval(PyObject *obj, void *ptr, PyObject *val)
+COREARRAY_DLL_LOCAL void numpy_setval(jl_array_t *obj, void *ptr, jl_array_t *val)
 {
 	PyArray_SETITEM(obj, ptr, val);
 }
 
 
-COREARRAY_DLL_LOCAL void numpy_to_int32(PyObject *obj, vector<int> &out)
+COREARRAY_DLL_LOCAL void numpy_to_int32(jl_array_t *obj, vector<int> &out)
 {
 	if (PyArray_Check(obj))
 	{
@@ -1307,11 +1307,11 @@ COREARRAY_DLL_LOCAL void numpy_to_int32(PyObject *obj, vector<int> &out)
 	throw ErrSeqArray("Fails to convert a numpty object to an integer vector.");
 }
 
-COREARRAY_DLL_LOCAL void numpy_to_string(PyObject *obj, vector<string> &out)
+COREARRAY_DLL_LOCAL void numpy_to_string(jl_array_t *obj, vector<string> &out)
 {
 	if (PyArray_Check(obj))
 	{
-		PyObject **p = (PyObject**)PyArray_DATA(obj);
+		jl_array_t **p = (jl_array_t**)PyArray_DATA(obj);
 		size_t n = PyArray_SIZE(obj);
 		out.resize(n);
 		for (size_t i=0; i < n; i++)
@@ -1328,7 +1328,7 @@ COREARRAY_DLL_LOCAL void numpy_to_string(PyObject *obj, vector<string> &out)
 		out.resize(n);
 		for(size_t i=0; i < n; i++)
 		{
-			PyObject *p = PyList_GetItem(obj, i);
+			jl_array_t *p = PyList_GetItem(obj, i);
 		#if (PY_MAJOR_VERSION >= 3)
 			out[i] = PyUnicode_AsUTF8(p);
 		#else

@@ -38,8 +38,8 @@ protected:
 public:
 	/// constructor
 	CApply_Variant_Basic(CFileInfo &File, const char *var_name);
-	virtual void ReadData(PyObject *val);
-	virtual PyObject *NeedArray();
+	virtual void ReadData(jl_array_t *val);
+	virtual jl_array_t *NeedArray();
 };
 
 
@@ -48,12 +48,12 @@ class COREARRAY_DLL_LOCAL CApply_Variant_Pos: public CApply_Variant
 {
 protected:
 	int *PtrPos;
-	PyObject *VarNode;  ///< R object
+	jl_array_t *VarNode;  ///< R object
 public:
 	/// constructor
 	CApply_Variant_Pos(CFileInfo &File);
-	virtual void ReadData(PyObject *val);
-	virtual PyObject *NeedArray(int &nProtected);
+	virtual void ReadData(jl_array_t *val);
+	virtual jl_array_t *NeedArray(int &nProtected);
 };
 
 
@@ -62,12 +62,12 @@ class COREARRAY_DLL_LOCAL CApply_Variant_Chrom: public CApply_Variant
 {
 protected:
 	CChromIndex *ChromIndex;
-	PyObject *VarNode;  ///< R object
+	jl_array_t *VarNode;  ///< R object
 public:
 	/// constructor
 	CApply_Variant_Chrom(CFileInfo &File);
-	virtual void ReadData(PyObject *val);
-	virtual PyObject *NeedArray(int &nProtected);
+	virtual void ReadData(jl_array_t *val);
+	virtual jl_array_t *NeedArray(int &nProtected);
 };
 
 
@@ -82,7 +82,7 @@ protected:
 	ssize_t CellCount;  ///< the selected number of entries at a site
 	vector<C_BOOL> Selection;  ///< the buffer of selection
 	VEC_AUTO_PTR ExtPtr;       ///< a pointer to the additional buffer
-	PyObject *VarIntGeno;      ///< genotype R integer object
+	jl_array_t *VarIntGeno;      ///< genotype R integer object
 
 	inline int _ReadGenoData(int *Base);
 	inline C_UInt8 _ReadGenoData(C_UInt8 *Base);
@@ -98,8 +98,8 @@ public:
 
 	void Init(CFileInfo &File);
 
-	virtual PyObject *NeedArray();
-	virtual void ReadData(PyObject *val);
+	virtual jl_array_t *NeedArray();
+	virtual void ReadData(jl_array_t *val);
 
 	/// read genotypes in 32-bit integer
 	void ReadGenoData(int *Base);
@@ -117,8 +117,8 @@ public:
 	/// constructor
 	CApply_Variant_Dosage(CFileInfo &File);
 
-	virtual PyObject *NeedArray();
-	virtual void ReadData(PyObject *val);
+	virtual jl_array_t *NeedArray();
+	virtual void ReadData(jl_array_t *val);
 
 	/// read dosages in 32-bit integer
 	void ReadDosage(int *Base);
@@ -137,7 +137,7 @@ protected:
 	ssize_t CellCount;  ///< the selected number of entries at a site
 	bool UseRaw;  ///< whether use RAW type
 	vector<C_BOOL> Selection;  ///< the buffer of selection
-	PyObject *VarPhase;  ///< genotype R object
+	jl_array_t *VarPhase;  ///< genotype R object
 
 public:
 	ssize_t SampNum;  ///< the number of selected samples
@@ -149,8 +149,8 @@ public:
 
 	void Init(CFileInfo &File, bool use_raw);
 
-	virtual void ReadData(PyObject *val);
-	virtual PyObject *NeedArray(int &nProtected);
+	virtual void ReadData(jl_array_t *val);
+	virtual jl_array_t *NeedArray(int &nProtected);
 };
 
 
@@ -163,14 +163,14 @@ protected:
 	CIndex *VarIndex;  ///< indexing the format variable
 	C_SVType SVType;        ///< data type for GDS reading
 	C_Int32 BaseNum;        ///< if 2-dim, the size of the first dimension
-	map<int, PyObject*> VarList;  ///< a list of PyObject variables
+	map<int, jl_array_t*> VarList;  ///< a list of jl_array_t variables
 
 public:
 	/// constructor
 	CApply_Variant_Info(CFileInfo &File, const char *var_name);
 
-	virtual void ReadData(PyObject *val);
-	virtual PyObject *NeedArray(int &nProtected);
+	virtual void ReadData(jl_array_t *val);
+	virtual jl_array_t *NeedArray(int &nProtected);
 };
 
 
@@ -185,7 +185,7 @@ protected:
 
 	C_SVType SVType;        ///< data type for GDS reading
 	C_BOOL *SelPtr[2];      ///< pointers to selection
-	map<int, PyObject*> VarList;  ///< a list of PyObject variables
+	map<int, jl_array_t*> VarList;  ///< a list of jl_array_t variables
 
 public:
 	ssize_t SampNum;  ///< the number of selected samples
@@ -196,8 +196,8 @@ public:
 
 	void Init(CFileInfo &File, const char *var_name);
 
-	virtual void ReadData(PyObject *val);
-	virtual PyObject *NeedArray(int &nProtected);
+	virtual void ReadData(jl_array_t *val);
+	virtual jl_array_t *NeedArray(int &nProtected);
 };
 
 
@@ -212,8 +212,8 @@ public:
 	/// constructor
 	CApply_Variant_NumAllele(CFileInfo &File);
 
-	virtual PyObject *NeedArray();
-	virtual void ReadData(PyObject *val);
+	virtual jl_array_t *NeedArray();
+	virtual void ReadData(jl_array_t *val);
 	int GetNumAllele();
 };
 
@@ -224,7 +224,7 @@ extern "C"
 {
 
 /// Apply functions over margins on a working space
-COREARRAY_DLL_EXPORT PyObject *SEQ_Apply_Variant(PyObject *gdsfile, PyObject *var_name,
-	PyObject *FUN, PyObject *as_is, PyObject *var_index, PyObject *param, PyObject *rho);
+COREARRAY_DLL_EXPORT jl_array_t *SEQ_Apply_Variant(jl_array_t *gdsfile, jl_array_t *var_name,
+	jl_array_t *FUN, jl_array_t *as_is, jl_array_t *var_index, jl_array_t *param, jl_array_t *rho);
 
 } // extern "C"

@@ -44,7 +44,7 @@ CApply_Variant_Basic::CApply_Variant_Basic(CFileInfo &File,
 	Reset();
 }
 
-void CApply_Variant_Basic::ReadData(PyObject *val)
+void CApply_Variant_Basic::ReadData(jl_array_t *val)
 {
 	C_Int32 st = Position, one = 1;
 	if (COREARRAY_SV_INTEGER(SVType))
@@ -61,7 +61,7 @@ void CApply_Variant_Basic::ReadData(PyObject *val)
 	}
 }
 
-PyObject* CApply_Variant_Basic::NeedArray(int &nProtected)
+jl_array_t* CApply_Variant_Basic::NeedArray(int &nProtected)
 {
 	if (VarNode == NULL)
 		VarNode = RObject_GDS(Node, 1, nProtected, false);
@@ -81,12 +81,12 @@ CApply_Variant_Pos::CApply_Variant_Pos(CFileInfo &File):
 	Reset();
 }
 
-void CApply_Variant_Pos::ReadData(PyObject* val)
+void CApply_Variant_Pos::ReadData(jl_array_t* val)
 {
 	INTEGER(val)[0] = PtrPos[Position];
 }
 
-PyObject* CApply_Variant_Pos::NeedArray(int &nProtected)
+jl_array_t* CApply_Variant_Pos::NeedArray(int &nProtected)
 {
 	if (VarNode == NULL)
 	{
@@ -108,7 +108,7 @@ CApply_Variant_Chrom::CApply_Variant_Chrom(CFileInfo &File):
 	Reset();
 }
 
-void CApply_Variant_Chrom::ReadData(PyObject* val)
+void CApply_Variant_Chrom::ReadData(jl_array_t* val)
 {
 	const string &s1 = (*ChromIndex)[Position];
 	const char *s2 = CHAR(STRING_ELT(val, 0));
@@ -116,7 +116,7 @@ void CApply_Variant_Chrom::ReadData(PyObject* val)
 		SET_STRING_ELT(val, 0, mkChar(s1.c_str()));
 }
 
-PyObject* CApply_Variant_Chrom::NeedArray(int &nProtected)
+jl_array_t* CApply_Variant_Chrom::NeedArray(int &nProtected)
 {
 	if (VarNode == NULL)
 	{
@@ -278,7 +278,7 @@ void CApply_Variant_Geno::ReadGenoData(C_UInt8 *Base)
 	vec_i8_replace((C_Int8*)Base, CellCount, missing, NA_UINT8);
 }
 
-PyObject* CApply_Variant_Geno::NeedArray()
+jl_array_t* CApply_Variant_Geno::NeedArray()
 {
 	C_UInt8 NumIndexRaw;
 	C_Int64 Index;
@@ -295,7 +295,7 @@ PyObject* CApply_Variant_Geno::NeedArray()
 	}
 }
 
-void CApply_Variant_Geno::ReadData(PyObject *val)
+void CApply_Variant_Geno::ReadData(jl_array_t *val)
 {
 	void *ptr = numpy_getptr(val);
 	if (numpy_is_uint8(val))
@@ -316,13 +316,13 @@ CApply_Variant_Dosage::CApply_Variant_Dosage(CFileInfo &File):
 	ExtPtr.reset(sizeof(int)*CellCount);
 }
 
-PyObject* CApply_Variant_Dosage::NeedArray()
+jl_array_t* CApply_Variant_Dosage::NeedArray()
 {
 	if (!VarNode) VarNode = numpy_new_uint8(SampNum);
 	return VarNode;
 }
 
-void CApply_Variant_Dosage::ReadData(PyObject *val)
+void CApply_Variant_Dosage::ReadData(jl_array_t *val)
 {
 	void *ptr = numpy_getptr(val);
 	if (numpy_is_uint8(val))
@@ -453,7 +453,7 @@ void CApply_Variant_Phase::Init(CFileInfo &File, bool use_raw)
 	Reset();
 }
 
-void CApply_Variant_Phase::ReadData(PyObject* val)
+void CApply_Variant_Phase::ReadData(jl_array_t* val)
 {
 	CdIterator it;
 	GDS_Iter_Position(Node, &it, ssize_t(Position)*SiteCount);
@@ -463,7 +463,7 @@ void CApply_Variant_Phase::ReadData(PyObject* val)
 		GDS_Iter_RDataEx(&it, INTEGER(val), SiteCount, svInt32, &Selection[0]);
 }
 
-PyObject* CApply_Variant_Phase::NeedArray(int &nProtected)
+jl_array_t* CApply_Variant_Phase::NeedArray(int &nProtected)
 {
 	if (VarPhase == NULL)
 	{
@@ -472,7 +472,7 @@ PyObject* CApply_Variant_Phase::NeedArray(int &nProtected)
 		nProtected ++;
 		if (Ploidy > 2)
 		{
-			PyObject* dim = NEW_INTEGER(2);
+			jl_array_t* dim = NEW_INTEGER(2);
 			int *p = INTEGER(dim);
 			p[0] = Ploidy-1; p[1] = SampNum;
 			SET_DIM(VarPhase, dim);
@@ -508,7 +508,7 @@ CApply_Variant_Info::CApply_Variant_Info(CFileInfo &File,
 	Reset();
 }
 
-void CApply_Variant_Info::ReadData(PyObject* val)
+void CApply_Variant_Info::ReadData(jl_array_t* val)
 {
 	C_Int64 IndexRaw;
 	int NumIndexRaw;
@@ -535,26 +535,26 @@ void CApply_Variant_Info::ReadData(PyObject* val)
 	}
 }
 
-PyObject* CApply_Variant_Info::NeedArray(int &nProtected)
+jl_array_t* CApply_Variant_Info::NeedArray(int &nProtected)
 {
 	C_Int64 IndexRaw;
 	int NumIndexRaw;
 	VarIndex->GetInfo(Position, IndexRaw, NumIndexRaw);
 	if (NumIndexRaw <= 0) return R_NilValue;
 
-	map<int, PyObject*>::iterator it = VarList.find(NumIndexRaw);
+	map<int, jl_array_t*>::iterator it = VarList.find(NumIndexRaw);
 	if (it == VarList.end())
 	{
-		PyObject* ans = RObject_GDS(Node, BaseNum*NumIndexRaw, nProtected, true);
+		jl_array_t* ans = RObject_GDS(Node, BaseNum*NumIndexRaw, nProtected, true);
 		if (BaseNum > 1)
 		{
-			PyObject* dim = NEW_INTEGER(2);
+			jl_array_t* dim = NEW_INTEGER(2);
 			int *p = INTEGER(dim);
 			p[0] = BaseNum; p[1] = NumIndexRaw;
 			SET_DIM(ans, dim);
 		}
 
-		VarList.insert(pair<int, PyObject*>(NumIndexRaw, ans));
+		VarList.insert(pair<int, jl_array_t*>(NumIndexRaw, ans));
 		return ans;
 	} else
 		return it->second;
@@ -612,7 +612,7 @@ void CApply_Variant_Format::Init(CFileInfo &File, const char *var_name)
 	Reset();
 }
 
-void CApply_Variant_Format::ReadData(PyObject* val)
+void CApply_Variant_Format::ReadData(jl_array_t* val)
 {
 	C_Int64 IndexRaw;
 	int NumIndexRaw;
@@ -640,31 +640,31 @@ void CApply_Variant_Format::ReadData(PyObject* val)
 	}
 }
 
-PyObject* CApply_Variant_Format::NeedArray(int &nProtected)
+jl_array_t* CApply_Variant_Format::NeedArray(int &nProtected)
 {
 	C_Int64 IndexRaw;
 	int NumIndexRaw;
 	VarIndex->GetInfo(Position, IndexRaw, NumIndexRaw);
 	if (NumIndexRaw <= 0) return R_NilValue;
 
-	map<int, PyObject*>::iterator it = VarList.find(NumIndexRaw);
+	map<int, jl_array_t*>::iterator it = VarList.find(NumIndexRaw);
 	if (it == VarList.end())
 	{
-		PyObject* ans = RObject_GDS(Node, SampNum*NumIndexRaw, nProtected, false);
-		PyObject* dim = NEW_INTEGER(2);
+		jl_array_t* ans = RObject_GDS(Node, SampNum*NumIndexRaw, nProtected, false);
+		jl_array_t* dim = NEW_INTEGER(2);
 		int *p = INTEGER(dim);
 		p[0] = SampNum; p[1] = NumIndexRaw;
 		SET_DIM(ans, dim);
 
-		PyObject* name_list = PROTECT(NEW_LIST(2));
-		PyObject* tmp = PROTECT(NEW_CHARACTER(2));
+		jl_array_t* name_list = PROTECT(NEW_LIST(2));
+		jl_array_t* tmp = PROTECT(NEW_CHARACTER(2));
 		SET_STRING_ELT(tmp, 0, mkChar("sample"));
 		SET_STRING_ELT(tmp, 1, mkChar("index"));
 		SET_NAMES(name_list, tmp);
 		SET_DIMNAMES(ans, name_list);
 		UNPROTECT(2);
 
-		VarList.insert(pair<int, PyObject*>(NumIndexRaw, ans));
+		VarList.insert(pair<int, jl_array_t*>(NumIndexRaw, ans));
 		return ans;
 	} else
 		return it->second;
@@ -684,13 +684,13 @@ CApply_Variant_NumAllele::CApply_Variant_NumAllele(CFileInfo &File):
 	Reset();
 }
 
-PyObject* CApply_Variant_NumAllele::NeedArray()
+jl_array_t* CApply_Variant_NumAllele::NeedArray()
 {
 	if (!VarNode) VarNode = numpy_new_int32(1);
 	return VarNode;
 }
 
-void CApply_Variant_NumAllele::ReadData(PyObject *val)
+void CApply_Variant_NumAllele::ReadData(jl_array_t *val)
 {
 	int *p = (int*)numpy_getptr(val);
 	*p = GetNumAllele();
@@ -730,10 +730,10 @@ COREARRAY_DLL_LOCAL const char *Txt_Apply_VarIdx[] =
 
 
 /// Apply functions over margins on a working space
-COREARRAY_DLL_EXPORT PyObject* SEQ_Apply_Variant(PyObject* gdsfile, PyObject* var_name,
-	PyObject* FUN, PyObject* as_is, PyObject* var_index, PyObject* param, PyObject* rho)
+COREARRAY_DLL_EXPORT jl_array_t* SEQ_Apply_Variant(jl_array_t* gdsfile, jl_array_t* var_name,
+	jl_array_t* FUN, jl_array_t* as_is, jl_array_t* var_index, jl_array_t* param, jl_array_t* rho)
 {
-	PyObject* pam_use_raw = RGetListElement(param, "useraw");
+	jl_array_t* pam_use_raw = RGetListElement(param, "useraw");
 	if (!Rf_isLogical(pam_use_raw))
 		error("'.useraw' must be TRUE, FALSE or NA.");
 	int use_raw_flag = Rf_asLogical(pam_use_raw);
@@ -872,7 +872,7 @@ COREARRAY_DLL_EXPORT PyObject* SEQ_Apply_Variant(PyObject* gdsfile, PyObject* va
 		// ===========================================================
 		// initialize calling
 
-		PyObject* R_call_param = R_NilValue;
+		jl_array_t* R_call_param = R_NilValue;
 		if (NodeList.size() > 1)
 		{
 			PROTECT(R_call_param = NEW_LIST(NodeList.size()));
@@ -887,8 +887,8 @@ COREARRAY_DLL_EXPORT PyObject* SEQ_Apply_Variant(PyObject* gdsfile, PyObject* va
 		if (VarIdx < 0)
 			throw ErrSeqArray("'var.index' is not valid!");
 
-		PyObject* R_fcall;
-		PyObject* R_Index = NULL;
+		jl_array_t* R_fcall;
+		jl_array_t* R_Index = NULL;
 		if (VarIdx > 0)
 		{
 			PROTECT(R_Index = NEW_INTEGER(1));
@@ -902,7 +902,7 @@ COREARRAY_DLL_EXPORT PyObject* SEQ_Apply_Variant(PyObject* gdsfile, PyObject* va
 			nProtected ++;
 		}
 
-		map<PyObject*, PyObject*> R_fcall_map;
+		map<jl_array_t*, jl_array_t*> R_fcall_map;
 		R_fcall_map[R_call_param] = R_fcall;
 
 
@@ -924,7 +924,7 @@ COREARRAY_DLL_EXPORT PyObject* SEQ_Apply_Variant(PyObject* gdsfile, PyObject* va
 			if (NodeList.size() <= 1)
 			{
 				R_call_param = NodeList[0]->NeedArray(nProtected);
-				map<PyObject*, PyObject*>::iterator it = R_fcall_map.find(R_call_param);
+				map<jl_array_t*, jl_array_t*>::iterator it = R_fcall_map.find(R_call_param);
 				if (it == R_fcall_map.end())
 				{
 					if (VarIdx > 0)
@@ -947,14 +947,14 @@ COREARRAY_DLL_EXPORT PyObject* SEQ_Apply_Variant(PyObject* gdsfile, PyObject* va
 				size_t n = NodeList.size();
 				for (size_t i=0; i < n; i++, p++)
 				{
-					PyObject* tmp = (*p)->NeedArray(nProtected);
+					jl_array_t* tmp = (*p)->NeedArray(nProtected);
 					(*p)->ReadData(tmp);
 					SET_ELEMENT(R_call_param, i, tmp);
 				}
 			}
 
 			// call R function
-			PyObject* val = eval(R_fcall, rho);
+			jl_array_t* val = eval(R_fcall, rho);
 
 			// store data
 			switch (DatType)

@@ -23,7 +23,7 @@
 #ifndef _HEADER_SEQ_INDEX_
 #define _HEADER_SEQ_INDEX_
 
-#include <PyGDS_CPP.h>
+#include <J_GDS_CPP.h>
 #include <dTrait.h>
 
 #include <string>
@@ -53,8 +53,16 @@ using namespace std;
 using namespace CoreArray;
 
 
-class ErrSeqArray;
+// ===========================================================
+// Define missing values
+// ===========================================================
 
+const C_Int32 NA_INTEGER = 0x80000000;
+const C_UInt8 NA_UINT8   = 0xFF;
+
+
+
+class ErrSeqArray;
 
 // ===========================================================
 // Run-length encoding (RLE) object
@@ -155,9 +163,9 @@ public:
 	/// return the accumulated sum of values and current value in Lengths and Values given by a position
 	void GetInfo(size_t pos, C_Int64 &Sum, int &Value);
 	/// get lengths with selection
-	PyObject* GetLen_Sel(const C_BOOL sel[]);
+	jl_array_t* GetLen_Sel(const C_BOOL sel[]);
 	/// get lengths and bool selection from a set of selected variants
-	PyObject* GetLen_Sel(const C_BOOL sel[], int &out_var_start, int &out_var_count,
+	jl_array_t* GetLen_Sel(const C_BOOL sel[], int &out_var_start, int &out_var_count,
 		vector<C_BOOL> &out_var_sel);
 	/// return true if empty
 	inline bool Empty() const { return (TotalLength <= 0); }
@@ -412,9 +420,9 @@ public:
 	virtual bool Next();
 
 	/// return a numpty array object for the next call 'ReadData()'
-	virtual PyObject* NeedArray() = 0;
+	virtual jl_array_t* NeedArray() = 0;
 	/// read data to R object
-	virtual void ReadData(PyObject *val) = 0;
+	virtual void ReadData(jl_array_t *val) = 0;
 
 	/// variable type
 	inline TVarType VarType() const { return fVarType; }
@@ -431,7 +439,7 @@ private:
 class COREARRAY_DLL_LOCAL CApply_Variant: public CVarApply
 {
 protected:
-	PyObject *VarNode;  ///< Python object
+	jl_array_t *VarNode;  ///< Python object
 public:
 	/// constructor
 	CApply_Variant();
@@ -541,42 +549,6 @@ public:
 	ErrSeqArray(const std::string &msg): ErrCoreArray()
 		{ fMessage = msg; }
 };
-
-
-
-// ===========================================================
-// Import the NumPy Package
-// ===========================================================
-
-const C_Int32 NA_INTEGER = 0x80000000;
-const C_UInt8 NA_UINT8   = 0xFF;
-
-
-COREARRAY_DLL_LOCAL bool numpy_init();
-
-COREARRAY_DLL_LOCAL PyObject* numpy_new_uint8(size_t n);
-COREARRAY_DLL_LOCAL PyObject* numpy_new_uint8_mat(size_t n1, size_t n2);
-COREARRAY_DLL_LOCAL PyObject* numpy_new_uint8_dim3(size_t n1, size_t n2, size_t n3);
-
-COREARRAY_DLL_LOCAL PyObject* numpy_new_int32(size_t n);
-COREARRAY_DLL_LOCAL PyObject* numpy_new_int32_mat(size_t n1, size_t n2);
-COREARRAY_DLL_LOCAL PyObject* numpy_new_int32_dim3(size_t n1, size_t n2, size_t n3);
-
-COREARRAY_DLL_LOCAL PyObject* numpy_new_string(size_t n);
-
-COREARRAY_DLL_LOCAL bool numpy_is_array(PyObject *obj);
-COREARRAY_DLL_LOCAL bool numpy_is_array_or_list(PyObject *obj);
-COREARRAY_DLL_LOCAL bool numpy_is_array_int(PyObject *obj);
-
-COREARRAY_DLL_LOCAL bool numpy_is_uint8(PyObject *obj);   // assuming obj is PyArray
-COREARRAY_DLL_LOCAL bool numpy_is_string(PyObject *obj);  // assuming obj is PyArray
-
-
-COREARRAY_DLL_LOCAL void* numpy_getptr(PyObject *obj);
-COREARRAY_DLL_LOCAL void numpy_setval(PyObject *obj, void *ptr, PyObject *val);
-
-COREARRAY_DLL_LOCAL void numpy_to_int32(PyObject *obj, vector<int> &out);
-COREARRAY_DLL_LOCAL void numpy_to_string(PyObject *obj, vector<string> &out);
 
 }
 

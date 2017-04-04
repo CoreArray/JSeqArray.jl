@@ -43,11 +43,11 @@ static bool is_logical(PdGDSObj Node)
 
 
 // get data
-static PyObject* VarGetData(CFileInfo &File, const char *name)
+static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 {
 	static const char *ERR_DIM = "Invalid dimension of '%s'.";
 
-	PyObject *rv_ans = NULL;
+	jl_array_t *rv_ans = NULL;
 	TSelection &Sel = File.Selection();
 
 	if (strcmp(name, "sample.id") == 0)
@@ -62,37 +62,39 @@ static PyObject* VarGetData(CFileInfo &File, const char *name)
 			throw ErrSeqArray(ERR_DIM, name);
 		// read
 		C_BOOL *ss = Sel.pSample();
-		rv_ans = GDS_Py_Array_Read(N, NULL, NULL, &ss, svCustom);
+		rv_ans = GDS_JArray_Read(N, NULL, NULL, &ss, svCustom);
 
 	} else if (strcmp(name, "position") == 0)
 	{
 		int n = File.VariantSelNum();
+		jl_value_t *atype = jl_apply_array_type(jl_int32_type, 1);
+		rv_ans = jl_alloc_array_1d(atype, n);
 		if (n > 0)
 		{
 			const int *base = &File.Position()[0];
-			rv_ans = numpy_new_int32(n);
-			int *p = (int*)numpy_getptr(rv_ans);
+			int *p = (int*)jl_array_data(rv_ans);
 			C_BOOL *s = Sel.pVariant();
 			for (size_t m=File.VariantNum(); m > 0; m--)
 			{
 				if (*s++) *p++ = *base;
 				base ++;
 			}
-		} else
-			rv_ans = numpy_new_int32(0);
+		}
 
 	} else if (strcmp(name, "chromosome") == 0)
 	{
 		int n = File.VariantSelNum();
+		jl_value_t *atype = jl_apply_array_type(jl_string_type, 1);
+		rv_ans = jl_alloc_array_1d(atype, n);
+		JL_GC_PUSH1(&rv_ans);
 		if (n > 0)
 		{
 			CChromIndex &Chrom = File.Chromosome();
-			rv_ans = numpy_new_string(n);
-			PyObject **p = (PyObject**)numpy_getptr(rv_ans);
+			jl_value_t **p = (jl_value_t**)jl_array_data(rv_ans);
 			C_BOOL *s = Sel.pVariant();
 			size_t m = File.VariantNum();
 			string lastss;
-			PyObject *last = NULL;
+			jl_value_t *last = NULL;
 			for (size_t i=0; i < m; i++)
 			{
 				if (*s++)
@@ -104,12 +106,13 @@ static PyObject* VarGetData(CFileInfo &File, const char *name)
 						last = NULL;
 					}
 					if (!last)
-						last = PYSTR_SET2(&lastss[0], lastss.size());
-					numpy_setval(rv_ans, p++, last);
+						last = jl_pchar_to_string(lastss.c_str(), lastss.size());
+					*p++ = last;
+					jl_gc_wb(rv_ans, last);
 				}
 			}
-		} else
-			rv_ans = numpy_new_string(0);
+		}
+		JL_GC_POP();
 	
 	} else if ( (strcmp(name, "variant.id")==0) ||
 		(strcmp(name, "allele")==0) ||
@@ -127,7 +130,7 @@ static PyObject* VarGetData(CFileInfo &File, const char *name)
 			throw ErrSeqArray(ERR_DIM, name);
 		// read
 		C_BOOL *ss = Sel.pVariant();
-		rv_ans = GDS_Py_Array_Read(N, NULL, NULL, &ss, svCustom);
+		rv_ans = GDS_JArray_Read(N, NULL, NULL, &ss, svCustom);
 
 	} else if (strcmp(name, "genotype") == 0)
 	{
@@ -142,15 +145,18 @@ static PyObject* VarGetData(CFileInfo &File, const char *name)
 			// initialize GDS genotype Node
 			CApply_Variant_Geno NodeVar(File);
 			// set
-			rv_ans = numpy_new_uint8_dim3(nVariant, nSample, File.Ploidy());
-			C_UInt8 *base = (C_UInt8*)numpy_getptr(rv_ans);
+			jl_value_t *atype = jl_apply_array_type(jl_uint8_type, 1);
+			rv_ans = jl_alloc_array_3d(atype, File.Ploidy(), nSample, nVariant);
+			C_UInt8 *base = (C_UInt8*)jl_array_data(rv_ans);
 			ssize_t SIZE = (ssize_t)nSample * File.Ploidy();
 			do {
 				NodeVar.ReadGenoData(base);
 				base += SIZE;
 			} while (NodeVar.Next());
-		} else
-			rv_ans = numpy_new_uint8(0);
+		} else {
+			jl_value_t *atype = jl_apply_array_type(jl_uint8_type, 1);
+			rv_ans = jl_alloc_array_1d(atype, 0);
+		}
 
 	} else if (strcmp(name, "@genotype") == 0)
 	{
@@ -162,7 +168,7 @@ static PyObject* VarGetData(CFileInfo &File, const char *name)
 			throw ErrSeqArray(ERR_DIM, VarName);
 		// read
 		C_BOOL *ss = Sel.pVariant();
-		rv_ans = GDS_Py_Array_Read(N, NULL, NULL, &ss, svInt32);
+		rv_ans = GDS_JArray_Read(N, NULL, NULL, &ss, svInt32);
 
 	} else if (strcmp(name, "$dosage") == 0)
 	{
@@ -177,14 +183,17 @@ static PyObject* VarGetData(CFileInfo &File, const char *name)
 			// initialize GDS genotype Node
 			CApply_Variant_Dosage NodeVar(File);
 			// set
-			rv_ans = numpy_new_uint8_mat(nVariant, nSample);
-			C_UInt8 *base = (C_UInt8*)numpy_getptr(rv_ans);
+			jl_value_t *atype = jl_apply_array_type(jl_uint8_type, 1);
+			rv_ans = jl_alloc_array_2d(atype, nSample, nVariant);
+			C_UInt8 *base = (C_UInt8*)jl_array_data(rv_ans);
 			do {
 				NodeVar.ReadDosage(base);
 				base += nSample;
 			} while (NodeVar.Next());
-		} else
-			rv_ans = numpy_new_uint8(0);
+		} else {
+			jl_value_t *atype = jl_apply_array_type(jl_uint8_type, 1);
+			rv_ans = jl_alloc_array_1d(atype, 0);
+		}
 
 	} else if (strcmp(name, "phase") == 0)
 	{
@@ -203,7 +212,7 @@ static PyObject* VarGetData(CFileInfo &File, const char *name)
 		C_BOOL *ss[3] = { Sel.pVariant(), Sel.pSample(), NULL };
 		if (ndim == 3)
 			ss[2] = NeedArrayTRUEs(dim[2]);
-		rv_ans = GDS_Py_Array_Read(N, NULL, NULL, ss, svCustom);
+		rv_ans = GDS_JArray_Read(N, NULL, NULL, ss, svCustom);
 
 	} else if (strncmp(name, "annotation/info/@", 17) == 0)
 	{
@@ -235,14 +244,14 @@ static PyObject* VarGetData(CFileInfo &File, const char *name)
 			if (ndim == 2)
 				ss[1] = NeedArrayTRUEs(dim[1]);
 			C_SVType SV = svCustom;  // is_logical
-			rv_ans = GDS_Py_Array_Read(N, NULL, NULL, ss, SV);
+			rv_ans = GDS_JArray_Read(N, NULL, NULL, ss, SV);
 
 		} else {
 			// with index
 			CIndex &V = File.VarIndex(name2);
 			int var_start, var_count;
 			vector<C_BOOL> var_sel;
-			PyObject *Index = V.GetLen_Sel(Sel.pVariant(), var_start, var_count, var_sel);
+			jl_array_t *Index = V.GetLen_Sel(Sel.pVariant(), var_start, var_count, var_sel);
 
 			C_BOOL *ss[2] = { &var_sel[0], NULL };
 			C_Int32 dimst[2]  = { var_start, 0 };
@@ -252,7 +261,7 @@ static PyObject* VarGetData(CFileInfo &File, const char *name)
 				GDS_Array_GetDim(N, dimcnt, 2);
 				dimcnt[0] = var_count;
 			}
-			PyObject *Val = GDS_Py_Array_Read(N, dimst, dimcnt, ss, svCustom);
+			jl_array_t *Val = GDS_JArray_Read(N, dimst, dimcnt, ss, svCustom);
 
 			rv_ans = Py_BuildValue("{s:N,s:N}", "index", Index, "data", Val);
 		}
@@ -281,14 +290,14 @@ static PyObject* VarGetData(CFileInfo &File, const char *name)
 		CIndex &V = File.VarIndex(name2);
 		int var_start, var_count;
 		vector<C_BOOL> var_sel;
-		PyObject *Index = V.GetLen_Sel(Sel.pVariant(), var_start, var_count, var_sel);
+		jl_array_t *Index = V.GetLen_Sel(Sel.pVariant(), var_start, var_count, var_sel);
 
 		C_BOOL *ss[2] = { &var_sel[0], Sel.pSample() };
 		C_Int32 dimst[2]  = { var_start, 0 };
 		C_Int32 dimcnt[2];
 		GDS_Array_GetDim(N, dimcnt, 2);
 		dimcnt[0] = var_count;
-		PyObject *Val = GDS_Py_Array_Read(N, dimst, dimcnt, ss, svCustom);
+		jl_array_t *Val = GDS_JArray_Read(N, dimst, dimcnt, ss, svCustom);
 
 		rv_ans = Py_BuildValue("{s:N,s:N}", "index", Index, "data", Val);
 
@@ -311,7 +320,7 @@ static PyObject* VarGetData(CFileInfo &File, const char *name)
 		C_BOOL *ss[2] = { Sel.pSample(), NULL };
 		if (ndim == 2)
 			ss[1] = NeedArrayTRUEs(dim[1]);
-		rv_ans = GDS_Py_Array_Read(N, NULL, NULL, ss, svCustom);
+		rv_ans = GDS_JArray_Read(N, NULL, NULL, ss, svCustom);
 
 	} else if (strcmp(name, "$chrom_pos") == 0)
 	{
@@ -341,7 +350,7 @@ static PyObject* VarGetData(CFileInfo &File, const char *name)
 		char *p1 = buf1, *p2 = buf2;
 		int dup = 0;
 		rv_ans = numpy_new_string(n1);
-		PyObject **p = (PyObject**)numpy_getptr(rv_ans);
+		jl_array_t **p = (jl_array_t**)numpy_getptr(rv_ans);
 		for (size_t i=0; i < (size_t)n1; i++,p++)
 		{
 			snprintf(p1, sizeof(buf1), "%s_%d", chr[i].c_str(), pos[i]);
@@ -389,7 +398,7 @@ static PyObject* VarGetData(CFileInfo &File, const char *name)
 
 
 /// Get data from a working space
-COREARRAY_DLL_EXPORT PyObject* SEQ_GetData(PyObject *self, PyObject *args)
+COREARRAY_DLL_EXPORT jl_array_t* SEQ_GetData(jl_array_t *self, jl_array_t *args)
 {
 	int file_id;
 	const char *name;

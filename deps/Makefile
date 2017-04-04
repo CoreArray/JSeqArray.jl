@@ -58,8 +58,11 @@ LDLIBS   += $(shell $(JL_SHARE)/julia-config.jl --ldlibs)
 
 
 ## Define lib macro and include
-LIBMACRO = -DCOREARRAY_USE_ZLIB_EXT -DCOREARRAY_USE_LZMA_EXT -DCOREARRAY_NO_LZ4
-LIBINCLUDE = -Iinclude
+GDS_SHARE = $(shell julia -e 'using jugds; print(gds_get_include())')
+LIBMACRO =
+LIBINCLUDE = -I$(GDS_SHARE)
+
+
 CFLAGS   += $(LIBMACRO) $(LIBINCLUDE)
 CXXFLAGS += $(LIBMACRO) $(LIBINCLUDE)
 
