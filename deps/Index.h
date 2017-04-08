@@ -439,14 +439,15 @@ private:
 class COREARRAY_DLL_LOCAL CApply_Variant: public CVarApply
 {
 protected:
-	jl_array_t *VarNode;  ///< Python object
+	jl_array_t *VarNode;  ///< array object
+	void **gc_ptr;        ///< pointer to JL_GC_PUSHARGS
 public:
 	/// constructor
 	CApply_Variant();
 	/// constructor with file information
 	CApply_Variant(CFileInfo &File);
-	/// destructor
-	~CApply_Variant();
+	/// set GC protect
+	void GC_Protect(void **ptr);
 };
 
 
