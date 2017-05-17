@@ -15,16 +15,14 @@
 
 
 ## The command which runs the C compiler.
-CC = gcc
+CC ?= gcc
+## The command which runs the C++ compiler.
+CXX ?= g++
 
 ## Debugging and optimization options for the C compiler.
-CFLAGS = -O3 -fPIC
-
-## The command which runs the C++ compiler.
-CXX = g++
-
+CFLAGS = -O2
 ## Options for the C++ compiler.
-CXXFLAGS = -O3 -fPIC
+CXXFLAGS = -O2
 
 ## Options for linker
 LDFLAGS =

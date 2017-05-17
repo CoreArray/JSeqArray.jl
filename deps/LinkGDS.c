@@ -1,5 +1,5 @@
 //
-// LinkGDS.c: Link to the pygds package
+// LinkGDS.c: Link to the jugds package
 //
 
 #include <PyGDS.h>

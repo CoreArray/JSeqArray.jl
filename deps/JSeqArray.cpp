@@ -1,22 +1,22 @@
 // ===========================================================
 //
-// SeqArray.cpp: the C/C++ codes for the PySeqArray package
+// SeqArray.cpp: the C/C++ codes for the JSeqArray package
 //
 // Copyright (C) 2017    Xiuwen Zheng
 //
-// This file is part of PySeqArray.
+// This file is part of JSeqArray.
 //
-// PySeqArray is free software: you can redistribute it and/or modify it
+// JSeqArray is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License Version 3 as
 // published by the Free Software Foundation.
 //
-// PySeqArray is distributed in the hope that it will be useful, but
+// JSeqArray is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with PySeqArray.
+// along with JSeqArray.
 // If not, see <http://www.gnu.org/licenses/>.
 
 #include "Index.h"
@@ -40,7 +40,7 @@ extern "C"
 {
 
 using namespace CoreArray;
-using namespace PySeqArray;
+using namespace JSeqArray;
 
 
 // ===========================================================
@@ -1125,7 +1125,7 @@ static PyMethodDef module_methods[] = {
 static struct PyModuleDef ModStruct =
 {
 	PyModuleDef_HEAD_INIT,
-	"PySeqArray.ccall",  // name of module
+	"JSeqArray.ccall",  // name of module
 	"C functions for data manipulation",  // module documentation
 	-1,  // size of per-interpreter state of the module, or -1 if the module keeps state in global variables
 	module_methods

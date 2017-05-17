@@ -4,19 +4,19 @@
 //
 // Copyright (C) 2017    Xiuwen Zheng
 //
-// This file is part of PySeqArray.
+// This file is part of JSeqArray.
 //
-// PySeqArray is free software: you can redistribute it and/or modify it
+// JSeqArray is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License Version 3 as
 // published by the Free Software Foundation.
 //
-// PySeqArray is distributed in the hope that it will be useful, but
+// JSeqArray is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with PySeqArray.
+// along with JSeqArray.
 // If not, see <http://www.gnu.org/licenses/>.
 
 #include "Index.h"
@@ -24,7 +24,7 @@
 using namespace std;
 
 
-namespace PySeqArray
+namespace JSeqArray
 {
 
 static double NaN = 0.0/0.0;
@@ -1093,7 +1093,7 @@ COREARRAY_DLL_LOCAL void GDS_PATH_PREFIX_CHECK(const char *path)
 	{
 		if ((*path == '~') || (*path == '@'))
 		{
-			throw PySeqArray::ErrSeqArray(
+			throw JSeqArray::ErrSeqArray(
 				"the variable name contains an invalid prefix '%c'.",
 				*path);
 		}
