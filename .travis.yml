@@ -1,0 +1,10 @@
+language: julia
+
+julia:
+  - release
+  - nightly
+
+script:
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia -e 'Pkg.clone("https://github.com/CoreArray/jugds.jl.git"); Pkg.build("jugds")'
+
