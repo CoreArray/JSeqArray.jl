@@ -3,7 +3,7 @@ JSeqArray: data manipulation of whole-genome sequencing variants with SeqArray f
 
 ![GPLv3](http://www.gnu.org/graphics/gplv3-88x31.png)
 [GNU General Public License, GPLv3](http://www.gnu.org/copyleft/gpl.html)
-[![Build Status](https://travis-ci.org/CoreArray/JSeqArray.png)](https://travis-ci.org/CoreArray/JSeqArray)
+[![Build Status](https://travis-ci.org/CoreArray/JSeqArray.jl.png)](https://travis-ci.org/CoreArray/JSeqArray.jl)
 
 pre-release version: v0.1.0
 

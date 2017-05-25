@@ -22,9 +22,10 @@ module JSeqArray
 using jugds
 
 import Base: joinpath, show, print_with_color, println
-import jugds: type_gdsfile
+import jugds: type_gdsfile, open_gds, show
 
-export	TypeSeqArray
+export TypeSeqArray,
+	seqOpen
 
 
 
@@ -56,8 +57,27 @@ end
 
 ####  Type of GDS File and Node	 ####
 
-type TypeSeqArray
-	x :: type_gdsfile
+type TypeSeqArray <: anygdsfile
+	file::type_gdsfile
 end
+
+
+
+####  GDS File  ####
+
+# Open a SeqArray file
+function seqOpen(filename::String, readonly::Bool=true, allow_dup::Bool=false)
+	ff = open_gds(filename, readonly, allow_dup)
+	return TypeSeqArray(ff)
+end
+
+
+
+####  Display  ####
+
+function show(io::IO, file::TypeSeqArray, attr=false, all=false)
+	show(io, file.file, attr, all)
+end
+
 
 end
