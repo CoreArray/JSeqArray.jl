@@ -26,7 +26,7 @@ CXXFLAGS = -O2
 
 ## Options for linker
 LDFLAGS =
-LDLIBS = -lz -llzma
+LDLIBS =
 
 
 ## Remove directory entries
@@ -95,7 +95,7 @@ JSeqArray.o: JSeqArray.cpp
 	$(CXX) $(CXXFLAGS) JSeqArray.cpp -c -o $@
 
 LinkGDS.o: LinkGDS.c
-	$(CC) $(CFLAGS) LinkGDS.cpp -c -o $@
+	$(CC) $(CFLAGS) LinkGDS.c -c -o $@
 
 ReadByVariant.o: ReadByVariant.cpp ReadByVariant.h
 	$(CXX) $(CXXFLAGS) ReadByVariant.cpp -c -o $@

@@ -21,7 +21,6 @@
 
 #include "Index.h"
 #include "ReadByVariant.h"
-// #include "ReadBySample.h"
 
 
 using namespace JSeqArray;

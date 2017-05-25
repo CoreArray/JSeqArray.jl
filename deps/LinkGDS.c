@@ -2,8 +2,8 @@
 // LinkGDS.c: Link to the jugds package
 //
 
-#include <PyGDS.h>
+#include <J_GDS.h>
 
-// do not modify this file, PyGDS2.h is from the pygds package
+// do not modify this file, J_GDS2.h is from the jugds package
 
-#include <PyGDS2.h>
+#include <J_GDS2.h>

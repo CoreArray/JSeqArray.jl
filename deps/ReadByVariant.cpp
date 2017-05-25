@@ -68,7 +68,7 @@ jl_array_t* CApply_Variant_Basic::NeedArray(int &nProtected)
 	return VarNode;
 }
 
-/*
+
 // ====
 
 CApply_Variant_Pos::CApply_Variant_Pos(CFileInfo &File):
@@ -149,7 +149,7 @@ CApply_Variant_Geno::CApply_Variant_Geno(CFileInfo &File):
 
 CApply_Variant_Geno::~CApply_Variant_Geno()
 {
-	if (VarIntGeno) Py_DECREF(VarIntGeno);
+	// if (VarIntGeno) Py_DECREF(VarIntGeno);
 }
 
 void CApply_Variant_Geno::Init(CFileInfo &File)
@@ -280,7 +280,7 @@ void CApply_Variant_Geno::ReadGenoData(C_UInt8 *Base)
 
 jl_array_t* CApply_Variant_Geno::NeedArray()
 {
-	C_UInt8 NumIndexRaw;
+/*	C_UInt8 NumIndexRaw;
 	C_Int64 Index;
 	GenoIndex->GetInfo(Position, Index, NumIndexRaw);
 	if (NumIndexRaw > 4)
@@ -293,15 +293,17 @@ jl_array_t* CApply_Variant_Geno::NeedArray()
 			VarNode = numpy_new_int32_mat(SampNum, Ploidy);
 		return VarNode;
 	}
+*/
 }
 
 void CApply_Variant_Geno::ReadData(jl_array_t *val)
 {
-	void *ptr = numpy_getptr(val);
+/*	void *ptr = numpy_getptr(val);
 	if (numpy_is_uint8(val))
 		ReadGenoData((C_UInt8*)val);
 	else
 		ReadGenoData((int*)ptr);
+*/
 }
 
 
@@ -318,17 +320,21 @@ CApply_Variant_Dosage::CApply_Variant_Dosage(CFileInfo &File):
 
 jl_array_t* CApply_Variant_Dosage::NeedArray()
 {
+/*
 	if (!VarNode) VarNode = numpy_new_uint8(SampNum);
 	return VarNode;
+*/
 }
 
 void CApply_Variant_Dosage::ReadData(jl_array_t *val)
 {
+/*
 	void *ptr = numpy_getptr(val);
 	if (numpy_is_uint8(val))
 		ReadDosage((C_UInt8*)val);
 	else
 		ReadDosage((int*)ptr);
+*/
 }
 
 void CApply_Variant_Dosage::ReadDosage(int *Base)
@@ -686,14 +692,18 @@ CApply_Variant_NumAllele::CApply_Variant_NumAllele(CFileInfo &File):
 
 jl_array_t* CApply_Variant_NumAllele::NeedArray()
 {
+/*
 	if (!VarNode) VarNode = numpy_new_int32(1);
 	return VarNode;
+*/
 }
 
 void CApply_Variant_NumAllele::ReadData(jl_array_t *val)
 {
+/*
 	int *p = (int*)numpy_getptr(val);
 	*p = GetNumAllele();
+*/
 }
 
 int CApply_Variant_NumAllele::GetNumAllele()

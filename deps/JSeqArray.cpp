@@ -29,8 +29,6 @@
 #include <ctype.h>
 
 
-#define PY_EXPORT    static
-
 
 // ===========================================================
 // Library Functions
@@ -48,29 +46,21 @@ using namespace JSeqArray;
 // ===========================================================
 
 /// initialize a SeqArray file
-PY_EXPORT PyObject* SEQ_File_Init(PyObject *self, PyObject *args)
+JL_DLLEXPORT void SEQ_File_Init(int file_id)
 {
-	int file_id;
-	if (!PyArg_ParseTuple(args, "i", &file_id))
-		return NULL;
-
 	COREARRAY_TRY
 		GetFileInfo(file_id);
-	COREARRAY_CATCH_NONE
+	COREARRAY_CATCH
 }
 
 /// finalize a SeqArray file
-PY_EXPORT PyObject* SEQ_File_Done(PyObject *self, PyObject *args)
+JL_DLLEXPORT void SEQ_File_Done(int file_id)
 {
-	int file_id;
-	if (!PyArg_ParseTuple(args, "i", &file_id))
-		return NULL;
-
 	COREARRAY_TRY
 		map<int, CFileInfo>::iterator p = GDSFile_ID_Info.find(file_id);
 		if (p != GDSFile_ID_Info.end())
 			GDSFile_ID_Info.erase(p);
-	COREARRAY_CATCH_NONE
+	COREARRAY_CATCH
 }
 
 
@@ -80,12 +70,8 @@ PY_EXPORT PyObject* SEQ_File_Done(PyObject *self, PyObject *args)
 // ===========================================================
 
 /// push the current filter to the stack
-PY_EXPORT PyObject* SEQ_FilterPush(PyObject *self, PyObject *args)
+JL_DLLEXPORT void SEQ_FilterPush(int file_id, C_BOOL new_flag)
 {
-	int file_id;
-	int new_flag;
-	if (!PyArg_ParseTuple(args, "i" BSTR, &file_id, &new_flag)) return NULL;
-
 	COREARRAY_TRY
 		map<int, CFileInfo>::iterator it = GDSFile_ID_Info.find(file_id);
 		if (it != GDSFile_ID_Info.end())
@@ -96,16 +82,13 @@ PY_EXPORT PyObject* SEQ_FilterPush(PyObject *self, PyObject *args)
 				it->second.SelList.push_back(it->second.SelList.back());
 		} else
 			throw ErrSeqArray("The GDS file is closed or invalid.");
-	COREARRAY_CATCH_NONE
+	COREARRAY_CATCH
 }
 
 
 /// pop up the previous filter from the stack
-PY_EXPORT PyObject* SEQ_FilterPop(PyObject *self, PyObject *args)
+JL_DLLEXPORT void SEQ_FilterPop(int file_id)
 {
-	int file_id;
-	if (!PyArg_ParseTuple(args, "i", &file_id)) return NULL;
-
 	COREARRAY_TRY
 		map<int, CFileInfo>::iterator it = GDSFile_ID_Info.find(file_id);
 		if (it != GDSFile_ID_Info.end())
@@ -115,12 +98,12 @@ PY_EXPORT PyObject* SEQ_FilterPop(PyObject *self, PyObject *args)
 			it->second.SelList.pop_back();
 		} else
 			throw ErrSeqArray("The GDS file is closed or invalid.");
-	COREARRAY_CATCH_NONE
+	COREARRAY_CATCH
 }
 
-
+/*
 /// set a working space with selected sample id
-PY_EXPORT PyObject* SEQ_SetSpaceSample(PyObject *self, PyObject *args)
+JL_DLLEXPORT void SEQ_SetSpaceSample(PyObject *self, PyObject *args)
 {
 	int file_id;
 	PyObject *samp_id;
@@ -207,9 +190,9 @@ PY_EXPORT PyObject* SEQ_SetSpaceSample(PyObject *self, PyObject *args)
 	COREARRAY_CATCH_NONE;
 }
 
-/*
+
 /// set a working space with selected sample id (logical/raw vector, or index)
-PY_EXPORT PyObject* SEQ_SetSpaceSample2(PyObject* gdsfile, PyObject* samp_sel,
+JL_DLLEXPORT PyObject* SEQ_SetSpaceSample2(PyObject* gdsfile, PyObject* samp_sel,
 	PyObject* intersect, PyObject* verbose)
 {
 	int intersect_flag = Rf_asLogical(intersect);
@@ -330,7 +313,7 @@ PY_EXPORT PyObject* SEQ_SetSpaceSample2(PyObject* gdsfile, PyObject* samp_sel,
 
 
 /// set a working space with selected variant id
-PY_EXPORT PyObject* SEQ_SetSpaceVariant(PyObject* gdsfile, PyObject* var_id,
+JL_DLLEXPORT PyObject* SEQ_SetSpaceVariant(PyObject* gdsfile, PyObject* var_id,
 	PyObject* intersect, PyObject* verbose)
 {
 	int intersect_flag = Rf_asLogical(intersect);
@@ -427,7 +410,7 @@ PY_EXPORT PyObject* SEQ_SetSpaceVariant(PyObject* gdsfile, PyObject* var_id,
 
 
 /// set a working space with selected variant id (logical/raw vector, or index)
-PY_EXPORT PyObject* SEQ_SetSpaceVariant2(PyObject* gdsfile, PyObject* var_sel,
+JL_DLLEXPORT PyObject* SEQ_SetSpaceVariant2(PyObject* gdsfile, PyObject* var_sel,
 	PyObject* intersect, PyObject* verbose)
 {
 	int intersect_flag = Rf_asLogical(intersect);
@@ -557,7 +540,7 @@ static bool is_numeric(const string &txt)
 }
 
 /// set a working space flag with selected chromosome(s)
-PY_EXPORT PyObject* SEQ_SetChrom(PyObject* gdsfile, PyObject* include,
+JL_DLLEXPORT PyObject* SEQ_SetChrom(PyObject* gdsfile, PyObject* include,
 	PyObject* is_num, PyObject* frombp, PyObject* tobp, PyObject* intersect, PyObject* verbose)
 {
 	int nProtected = 0;
@@ -724,7 +707,7 @@ PY_EXPORT PyObject* SEQ_SetChrom(PyObject* gdsfile, PyObject* include,
 // ================================================================
 
 /// set a working space flag with selected variant id
-PY_EXPORT PyObject* SEQ_GetSpace(PyObject* gdsfile, PyObject* UseRaw)
+JL_DLLEXPORT PyObject* SEQ_GetSpace(PyObject* gdsfile, PyObject* UseRaw)
 {
 	int use_raw_flag = Rf_asLogical(UseRaw);
 	if (use_raw_flag == NA_LOGICAL)
@@ -800,7 +783,7 @@ inline static C_BOOL *SKIP_SELECTION(size_t num, C_BOOL *p)
 }
 
 /// split the selected variants according to multiple processes
-PY_EXPORT PyObject* SEQ_SplitSelection(PyObject* gdsfile, PyObject* split,
+JL_DLLEXPORT PyObject* SEQ_SplitSelection(PyObject* gdsfile, PyObject* split,
 	PyObject* index, PyObject* n_process, PyObject* selection_flag)
 {
 	const char *split_str = CHAR(STRING_ELT(split, 0));
@@ -886,7 +869,7 @@ PY_EXPORT PyObject* SEQ_SplitSelection(PyObject* gdsfile, PyObject* split,
 
 
 /// set a working space with selected variant id
-PY_EXPORT PyObject* SEQ_Summary(PyObject* gdsfile, PyObject* varname)
+JL_DLLEXPORT PyObject* SEQ_Summary(PyObject* gdsfile, PyObject* varname)
 {
 	COREARRAY_TRY
 
@@ -943,7 +926,7 @@ PY_EXPORT PyObject* SEQ_Summary(PyObject* gdsfile, PyObject* varname)
 
 
 /// get a logical vector with selection
-PY_EXPORT PyObject* SEQ_SelectFlag(PyObject* select, PyObject* len)
+JL_DLLEXPORT PyObject* SEQ_SelectFlag(PyObject* select, PyObject* len)
 {
 	R_len_t n = XLENGTH(select);
 	if (XLENGTH(len) != n)
@@ -973,7 +956,7 @@ PY_EXPORT PyObject* SEQ_SelectFlag(PyObject* select, PyObject* len)
 // get system configuration
 // ===========================================================
 
-PY_EXPORT PyObject* SEQ_IntAssign(PyObject* Dst, PyObject* Src)
+JL_DLLEXPORT PyObject* SEQ_IntAssign(PyObject* Dst, PyObject* Src)
 {
 	INTEGER(Dst)[0] = Rf_asInteger(Src);
 	return R_NilValue;
@@ -996,7 +979,7 @@ inline static void CvtDNAString(char *p)
 	}
 }
 
-PY_EXPORT PyObject* SEQ_DNAStrSet(PyObject* x)
+JL_DLLEXPORT PyObject* SEQ_DNAStrSet(PyObject* x)
 {
 	if (Rf_isVectorList(x))
 	{
@@ -1028,7 +1011,7 @@ PY_EXPORT PyObject* SEQ_DNAStrSet(PyObject* x)
 // ===========================================================
 
 /// the number of alleles per site
-PY_EXPORT PyObject* SEQ_System()
+JL_DLLEXPORT PyObject* SEQ_System()
 {
 	COREARRAY_TRY
 
@@ -1087,67 +1070,5 @@ PY_EXPORT PyObject* SEQ_System()
 	COREARRAY_CATCH
 }
 */
-
-
-// ===========================================================
-// the initial function when the package is loaded
-// ===========================================================
-
-// Register routines
-
-extern PyObject* SEQ_GetData(PyObject *self, PyObject *args);
-
-
-static PyMethodDef module_methods[] = {
-	// file operations
-	{ "file_init", (PyCFunction)SEQ_File_Init, METH_VARARGS, NULL },
-	{ "file_done", (PyCFunction)SEQ_File_Done, METH_VARARGS, NULL },
-
-	{ "flt_push", (PyCFunction)SEQ_FilterPush, METH_VARARGS, NULL },
-	{ "flt_pop", (PyCFunction)SEQ_FilterPop, METH_VARARGS, NULL },
-
-	{ "set_sample", (PyCFunction)SEQ_SetSpaceSample, METH_VARARGS, NULL },
-	// { "set_variant", (PyCFunction)SEQ_SetSpaceVariant, METH_VARARGS, NULL },
-
-
-	// get data
-    { "get_data", (PyCFunction)SEQ_GetData, METH_VARARGS, NULL },
-
-	// end
-	{ NULL, NULL, 0, NULL }
-};
-
-
-// Module entry point Python
-
-#if PY_MAJOR_VERSION >= 3
-
-static struct PyModuleDef ModStruct =
-{
-	PyModuleDef_HEAD_INIT,
-	"JSeqArray.ccall",  // name of module
-	"C functions for data manipulation",  // module documentation
-	-1,  // size of per-interpreter state of the module, or -1 if the module keeps state in global variables
-	module_methods
-};
-
-PyMODINIT_FUNC PyInit_ccall()
-#else
-PyMODINIT_FUNC initccall()
-#endif
-{
-	if (!numpy_init()) return NULL;
-	if (Init_GDS_Routines() < 0) return NULL;
-
-	// create the module and add the functions
-	PyObject *mod;
-#if PY_MAJOR_VERSION >= 3
-	mod = PyModule_Create(&ModStruct);
-#else
-	mod = Py_InitModule("pygds.ccall", module_methods);
-#endif
-
-	return mod;
-}
 
 } // extern "C"
