@@ -25,7 +25,7 @@ import Base: joinpath, show, print_with_color, println
 import jugds: type_gdsfile, open_gds, close_gds, show
 
 export TypeSeqArray,
-	seqOpen, seqClose
+	seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterReset
 
 
 
@@ -69,14 +69,40 @@ end
 # Open a SeqArray file
 function seqOpen(filename::String, readonly::Bool=true, allow_dup::Bool=false)
 	ff = open_gds(filename, readonly, allow_dup)
+	ccall((:SEQ_File_Init, LibSeqArray), Void, (Cint,), ff.id)
 	return TypeSeqArray(ff, nothing)
 end
 
 
 # Close the SeqArray file
 function seqClose(file::TypeSeqArray)
+	fid = file.id
 	close_gds(file.gds)
+	ccall((:SEQ_File_Done, LibSeqArray), Void, (Cint,), fid)
+	return nothing
 end
+
+
+# Set a filter on variants or samples with sample or variant IDs
+function seqFilterSet(file::TypeSeqArray, sample_id=nothing, variant_id=nothing,
+	intersect::Bool=false, verbose::Bool=true)
+
+end
+
+
+# Set a filter on variants or samples with an index vector
+function seqFilterSet2(file::TypeSeqArray, sample_id=nothing, variant_id=nothing,
+	intersect::Bool=false, verbose::Bool=true)
+
+end
+
+
+# Reset the filter
+function seqFilterReset(file::TypeSeqArray, sample::Bool=true,
+	variant::Bool=true, verbose::Bool=true)
+
+end
+
 
 
 
