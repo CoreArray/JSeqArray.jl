@@ -26,7 +26,7 @@ import jugds: type_gdsfile, open_gds, close_gds, show
 
 export TypeSeqArray,
 	seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterReset,
-	seqFilterPush, seqFilterPop
+	seqFilterPush, seqFilterPop, seqFilterGet
 
 
 
@@ -121,7 +121,9 @@ end
 
 
 # Get a sample/variant filter
-function FilterGet(file::TypeSeqArray, sample::Bool=true)
+function seqFilterGet(file::TypeSeqArray, sample::Bool=true)
+	return ccall((:SEQ_GetSpace, LibSeqArray), Vector{Bool}, (Cint,Bool),
+		file.gds.id, sample)
 end
 
 # Get data

@@ -49,7 +49,8 @@ using namespace JSeqArray;
 JL_DLLEXPORT void SEQ_File_Init(int file_id)
 {
 	COREARRAY_TRY
-		GetFileInfo(file_id);
+		CFileInfo &file = GetFileInfo(file_id);
+		file.Selection();  // force to initialize selection
 	COREARRAY_CATCH
 }
 
@@ -702,67 +703,38 @@ JL_DLLEXPORT PyObject* SEQ_SetChrom(PyObject* gdsfile, PyObject* include,
 
 	COREARRAY_CATCH
 }
-
+*/
 
 // ================================================================
 
 /// set a working space flag with selected variant id
-JL_DLLEXPORT PyObject* SEQ_GetSpace(PyObject* gdsfile, PyObject* UseRaw)
+JL_DLLEXPORT jl_array_t* SEQ_GetSpace(int file_id, C_BOOL sample)
 {
-	int use_raw_flag = Rf_asLogical(UseRaw);
-	if (use_raw_flag == NA_LOGICAL)
-		error("'.useraw' must be TRUE or FALSE.");
-
+	jl_array_t *rv_ans = NULL;
 	COREARRAY_TRY
 
-		CFileInfo &File = GetFileInfo(gdsfile);
+		CFileInfo &File = GetFileInfo(file_id);
 		TSelection &Sel = File.Selection();
 
-		// output
-		PROTECT(rv_ans = NEW_LIST(2));
-		PyObject* tmp;
-
-		// sample selection
-		size_t n = File.SampleNum();
-		if (use_raw_flag)
+		jl_value_t *atype = jl_apply_array_type(jl_bool_type, 1);
+		if (sample)
 		{
-			PROTECT(tmp = NEW_RAW(n));
-			memcpy(RAW(tmp), Sel.pSample(), n);
+			size_t n = File.SampleNum();
+			rv_ans = jl_alloc_array_1d(atype, n);
+			memcpy(jl_array_data(rv_ans), Sel.pSample(), n);
 		} else {
-			PROTECT(tmp = NEW_LOGICAL(n));
-			int *p = LOGICAL(tmp);
-			C_BOOL *s = Sel.pSample();
-			for (; n > 0; n--) *p++ = *s++;
+			size_t n = File.VariantNum();
+			rv_ans = jl_alloc_array_1d(atype, n);
+			memcpy(jl_array_data(rv_ans), Sel.pVariant(), n);
 		}
-		SET_ELEMENT(rv_ans, 0, tmp);
-
-		// variant selection
-		n = File.VariantNum();
-		if (use_raw_flag)
-		{
-			PROTECT(tmp = NEW_RAW(n));
-			memcpy(RAW(tmp), Sel.pVariant(), n);
-		} else {
-			PROTECT(tmp = NEW_LOGICAL(n));
-			int *p = LOGICAL(tmp);
-			C_BOOL *s = Sel.pVariant();
-			for (; n > 0; n--) *p++ = *s++;
-		}
-		SET_ELEMENT(rv_ans, 1, tmp);
-
-		PROTECT(tmp = NEW_CHARACTER(2));
-			SET_STRING_ELT(tmp, 0, mkChar("sample.sel"));
-			SET_STRING_ELT(tmp, 1, mkChar("variant.sel"));
-		SET_NAMES(rv_ans, tmp);
-
-		UNPROTECT(4);
 
 	COREARRAY_CATCH
+	return rv_ans;
 }
 
 
 // ===========================================================
-
+/*
 inline static C_BOOL *CLEAR_SELECTION(size_t num, C_BOOL *p)
 {
 	while (num > 0)
