@@ -25,7 +25,8 @@ import Base: joinpath, show, print_with_color, println
 import jugds: type_gdsfile, open_gds, close_gds, show
 
 export TypeSeqArray,
-	seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterReset
+	seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterReset,
+	seqFilterPush, seqFilterPop
 
 
 
@@ -69,6 +70,7 @@ end
 # Open a SeqArray file
 function seqOpen(filename::String, readonly::Bool=true, allow_dup::Bool=false)
 	ff = open_gds(filename, readonly, allow_dup)
+	# TODO: check file structure
 	ccall((:SEQ_File_Init, LibSeqArray), Void, (Cint,), ff.id)
 	return TypeSeqArray(ff, nothing)
 end
@@ -102,6 +104,41 @@ function seqFilterReset(file::TypeSeqArray, sample::Bool=true,
 	variant::Bool=true, verbose::Bool=true)
 
 end
+
+
+# Push a filter
+function seqFilterPush(file::TypeSeqArray, reset::Bool=true)
+	ccall((:SEQ_FilterPush, LibSeqArray), Void, (Cint,Bool), file.gds.id, reset)
+	return nothing
+end
+
+
+# Pop a filter
+function seqFilterPop(file::TypeSeqArray)
+	ccall((:SEQ_FilterPop, LibSeqArray), Void, (Cint,), file.gds.id)
+	return nothing
+end
+
+
+# Get a sample/variant filter
+function FilterGet(file::TypeSeqArray, sample::Bool=true)
+end
+
+# Get data
+function seqGetData(file::TypeSeqArray, name::String)
+end
+
+
+# Apply function over array margins
+# function seqApply(file::TypeSeqArray, name::String, fun, param=nothing,
+# 	as_is='none', bsize=1024, verbose::Bool=false)
+# end
+
+
+# Apply Functions in Parallel
+# function seqRunParallel(file::TypeSeqArray, fun, param=nothing, ncpu=0,
+#	split='by.variant', combine='unlist')
+# end
 
 
 
