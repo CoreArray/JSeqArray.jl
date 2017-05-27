@@ -169,7 +169,7 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 		C_BOOL *ss = Sel.pVariant();
 		rv_ans = GDS_JArray_Read(N, NULL, NULL, &ss, svInt32);
 
-	} else if (strcmp(name, "#dosage") == 0)
+	} else if (strcmp(name, "#dosage")==0 || strcmp(name, "$dosage")==0)
 	{
 		// ===========================================================
 		// dosage data
@@ -246,16 +246,15 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 			rv_ans = GDS_JArray_Read(N, NULL, NULL, ss, SV);
 
 		} else {
-/*			// with index
+			// with index
 			CIndex &V = File.VarIndex(name2);
 			int var_start, var_count;
 			vector<C_BOOL> var_sel;
 
-			jl_value_t **args;
-			JL_GC_PUSHARGS(args, 2);
-
-			jl_array_t *Index = V.GetLen_Sel(Sel.pVariant(), var_start, var_count, var_sel);
-			args[0] = Index;
+			jl_array_t *Index = NULL;
+			jl_array_t *Dat = NULL;
+			JL_GC_PUSH2(&Index, &Dat);
+			Index = V.GetLen_Sel(Sel.pVariant(), var_start, var_count, var_sel);
 
 			C_BOOL *ss[2] = { &var_sel[0], NULL };
 			C_Int32 dimst[2]  = { var_start, 0 };
@@ -265,12 +264,14 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 				GDS_Array_GetDim(N, dimcnt, 2);
 				dimcnt[0] = var_count;
 			}
-			jl_array_t *Val = GDS_JArray_Read(N, dimst, dimcnt, ss, svCustom);
-			args[1] = Val;
+			Dat = GDS_JArray_Read(N, dimst, dimcnt, ss, svCustom);
 
-			rv_ans = Py_BuildValue("{s:N,s:N}", "index", Index, "data", Val);
+			jl_value_t *atype = jl_apply_array_type(jl_any_type, 1);
+			rv_ans = jl_alloc_array_1d(atype, 2);
+			void **ptr = (void**)jl_array_data(rv_ans);
+			ptr[0] = Index; jl_gc_wb(rv_ans, Index);
+			ptr[1] = Dat; jl_gc_wb(rv_ans, Dat);
 			JL_GC_POP();
-*/
 		}
 
 	} else if (strncmp(name, "annotation/format/@", 19) == 0)
@@ -287,7 +288,7 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 	{
 		// ===========================================================
 		// annotation/format
-/*
+
 		GDS_PATH_PREFIX_CHECK(name);
 		string name1 = string(name) + "/data";
 		string name2 = string(name) + "/@data";
@@ -297,17 +298,25 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 		CIndex &V = File.VarIndex(name2);
 		int var_start, var_count;
 		vector<C_BOOL> var_sel;
-		jl_array_t *Index = V.GetLen_Sel(Sel.pVariant(), var_start, var_count, var_sel);
+
+		jl_array_t *Index = NULL;
+		jl_array_t *Dat = NULL;
+		JL_GC_PUSH2(&Index, &Dat);
+		Index = V.GetLen_Sel(Sel.pVariant(), var_start, var_count, var_sel);
 
 		C_BOOL *ss[2] = { &var_sel[0], Sel.pSample() };
 		C_Int32 dimst[2]  = { var_start, 0 };
 		C_Int32 dimcnt[2];
 		GDS_Array_GetDim(N, dimcnt, 2);
 		dimcnt[0] = var_count;
-		jl_array_t *Val = GDS_JArray_Read(N, dimst, dimcnt, ss, svCustom);
+		Dat = GDS_JArray_Read(N, dimst, dimcnt, ss, svCustom);
 
-		rv_ans = Py_BuildValue("{s:N,s:N}", "index", Index, "data", Val);
-*/
+		jl_value_t *atype = jl_apply_array_type(jl_any_type, 1);
+		rv_ans = jl_alloc_array_1d(atype, 2);
+		void **ptr = (void**)jl_array_data(rv_ans);
+		ptr[0] = Index; jl_gc_wb(rv_ans, Index);
+		ptr[1] = Dat; jl_gc_wb(rv_ans, Dat);
+		JL_GC_POP();
 
 	} else if (strncmp(name, "sample.annotation/", 18) == 0)
 	{
@@ -330,7 +339,7 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 			ss[1] = NeedArrayTRUEs(dim[1]);
 		rv_ans = GDS_JArray_Read(N, NULL, NULL, ss, svCustom);
 
-	} else if (strcmp(name, "#chrom_pos") == 0)
+	} else if (strcmp(name, "#chrom_pos")==0 || strcmp(name, "$chrom_pos")==0)
 	{
 		// ===========================================================
 		// chromosome-position
@@ -384,7 +393,7 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 
 		JL_GC_POP();
 
-	} else if (strcmp(name, "#num_allele") == 0)
+	} else if (strcmp(name, "#num_allele")==0 || strcmp(name, "$num_allele")==0)
 	{
 		// ===========================================================
 		// the number of distinct alleles
@@ -402,7 +411,7 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 		}
 
 /*
-	} else if (strcmp(name, "#ref") == 0)
+	} else if (strcmp(name, "#ref")==0 || strcmp(name, "$ref")==0)
 	{
 		// ===========================================================
 		// the reference allele
@@ -429,7 +438,7 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 			pi ++;
 		}
 
-	} else if (strcmp(name, "#alt") == 0)
+	} else if (strcmp(name, "#alt")==0 || strcmp(name, "$alt")==0)
 	{
 		// ===========================================================
 		// the reference allele

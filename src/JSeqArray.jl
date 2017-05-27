@@ -25,7 +25,7 @@ using jugds
 import Base: joinpath, show, print_with_color, println
 import jugds: type_gdsfile, open_gds, close_gds, show
 
-export TypeSeqArray,
+export TypeSeqArray, TypeVarData,
 	seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterReset,
 	seqFilterPush, seqFilterPop, seqFilterGet, seqGetData
 
@@ -59,9 +59,16 @@ end
 
 ####  Type of GDS File and Node	 ####
 
+# Type for a SeqArray file
 type TypeSeqArray <: anygdsfile
 	gds::type_gdsfile
-	auxiliary
+	auxiliary::Any
+end
+
+# Type for variable-length data
+type TypeVarData
+	index::Vector{Int32}
+	data::Any
 end
 
 
@@ -129,8 +136,12 @@ end
 
 # Get data
 function seqGetData(file::TypeSeqArray, name::String)
-	return ccall((:SEQ_GetData, LibSeqArray), Vector{Any}, (Cint,Cstring),
+	ans = ccall((:SEQ_GetData, LibSeqArray), Any, (Cint,Cstring),
 		file.gds.id, name)
+	if typeof(ans) == Vector{Any}
+		ans = TypeVarData(ans[1], ans[2])
+	end
+	return ans
 end
 
 
