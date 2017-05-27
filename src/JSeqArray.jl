@@ -17,6 +17,7 @@
 # License along with JSeqArray.
 # If not, see <http://www.gnu.org/licenses/>.
 
+
 module JSeqArray
 
 using jugds
@@ -26,7 +27,7 @@ import jugds: type_gdsfile, open_gds, close_gds, show
 
 export TypeSeqArray,
 	seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterReset,
-	seqFilterPush, seqFilterPop, seqFilterGet
+	seqFilterPush, seqFilterPop, seqFilterGet, seqGetData
 
 
 
@@ -128,6 +129,8 @@ end
 
 # Get data
 function seqGetData(file::TypeSeqArray, name::String)
+	return ccall((:SEQ_GetData, LibSeqArray), Vector{Any}, (Cint,Cstring),
+		file.gds.id, name)
 end
 
 

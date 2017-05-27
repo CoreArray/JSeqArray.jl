@@ -144,7 +144,7 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 			// initialize GDS genotype Node
 			CApply_Variant_Geno NodeVar(File);
 			// set
-			jl_value_t *atype = jl_apply_array_type(jl_uint8_type, 1);
+			jl_value_t *atype = jl_apply_array_type(jl_uint8_type, 3);
 			rv_ans = jl_alloc_array_3d(atype, File.Ploidy(), nSample, nVariant);
 			C_UInt8 *base = (C_UInt8*)jl_array_data(rv_ans);
 			ssize_t SIZE = (ssize_t)nSample * File.Ploidy();
@@ -153,8 +153,8 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 				base += SIZE;
 			} while (NodeVar.Next());
 		} else {
-			jl_value_t *atype = jl_apply_array_type(jl_uint8_type, 1);
-			rv_ans = jl_alloc_array_1d(atype, 0);
+			jl_value_t *atype = jl_apply_array_type(jl_uint8_type, 3);
+			rv_ans = jl_alloc_array_3d(atype, File.Ploidy(), nSample, 0);
 		}
 
 	} else if (strcmp(name, "@genotype") == 0)
@@ -169,7 +169,7 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 		C_BOOL *ss = Sel.pVariant();
 		rv_ans = GDS_JArray_Read(N, NULL, NULL, &ss, svInt32);
 
-	} else if (strcmp(name, "$dosage") == 0)
+	} else if (strcmp(name, "#dosage") == 0)
 	{
 		// ===========================================================
 		// dosage data
@@ -182,7 +182,7 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 			// initialize GDS genotype Node
 			CApply_Variant_Dosage NodeVar(File);
 			// set
-			jl_value_t *atype = jl_apply_array_type(jl_uint8_type, 1);
+			jl_value_t *atype = jl_apply_array_type(jl_uint8_type, 2);
 			rv_ans = jl_alloc_array_2d(atype, nSample, nVariant);
 			C_UInt8 *base = (C_UInt8*)jl_array_data(rv_ans);
 			do {
@@ -190,8 +190,8 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 				base += nSample;
 			} while (NodeVar.Next());
 		} else {
-			jl_value_t *atype = jl_apply_array_type(jl_uint8_type, 1);
-			rv_ans = jl_alloc_array_1d(atype, 0);
+			jl_value_t *atype = jl_apply_array_type(jl_uint8_type, 2);
+			rv_ans = jl_alloc_array_2d(atype, nSample, 0);
 		}
 
 	} else if (strcmp(name, "phase") == 0)
@@ -330,7 +330,7 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 			ss[1] = NeedArrayTRUEs(dim[1]);
 		rv_ans = GDS_JArray_Read(N, NULL, NULL, ss, svCustom);
 
-	} else if (strcmp(name, "$chrom_pos") == 0)
+	} else if (strcmp(name, "#chrom_pos") == 0)
 	{
 		// ===========================================================
 		// chromosome-position
@@ -384,7 +384,7 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 
 		JL_GC_POP();
 
-	} else if (strcmp(name, "$num_allele") == 0)
+	} else if (strcmp(name, "#num_allele") == 0)
 	{
 		// ===========================================================
 		// the number of distinct alleles
@@ -401,6 +401,61 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 			NodeVar.Next();
 		}
 
+/*
+	} else if (strcmp(name, "#ref") == 0)
+	{
+		// ===========================================================
+		// the reference allele
+
+		PdAbstractArray N = File.GetObj("allele", TRUE);
+		// check
+		if ((GDS_Array_DimCnt(N) != 1) ||
+				(GDS_Array_GetTotalCount(N) != File.VariantNum()))
+			throw ErrSeqArray(ERR_DIM, name);
+		// read
+		size_t n = File.VariantSelNum();
+		vector<string> buffer(n);
+		C_BOOL *ss = Sel.pVariant();
+		GDS_Array_ReadDataEx(N, NULL, NULL, &ss, &buffer[0], svStrUTF8);
+		// output
+		rv_ans = numpy_new_string(n);
+		PyObject **pi = (PyObject**)numpy_getptr(rv_ans);
+		for (size_t i=0; i < n; i++)
+		{
+			const char *p = buffer[i].c_str();
+			size_t m = 0;
+			for (const char *s=p; *s!=',' && *s!=0; s++) m++;
+			numpy_setval(rv_ans, pi, PYSTR_SET2(p, m));
+			pi ++;
+		}
+
+	} else if (strcmp(name, "#alt") == 0)
+	{
+		// ===========================================================
+		// the reference allele
+
+		PdAbstractArray N = File.GetObj("allele", TRUE);
+		// check
+		if ((GDS_Array_DimCnt(N) != 1) ||
+				(GDS_Array_GetTotalCount(N) != File.VariantNum()))
+			throw ErrSeqArray(ERR_DIM, name);
+		// read
+		size_t n = File.VariantSelNum();
+		vector<string> buffer(n);
+		C_BOOL *ss = Sel.pVariant();
+		GDS_Array_ReadDataEx(N, NULL, NULL, &ss, &buffer[0], svStrUTF8);
+		// output
+		rv_ans = numpy_new_string(n);
+		PyObject **pi = (PyObject**)numpy_getptr(rv_ans);
+		for (size_t i=0; i < n; i++)
+		{
+			const char *p = buffer[i].c_str();
+			for (; *p!=',' && *p!=0; p++);
+			if (*p == ',') p++;
+			numpy_setval(rv_ans, pi, PYSTR_SET(p));
+			pi ++;
+		}
+*/
 	} else {
 		throw ErrSeqArray(
 			"'%s' is not a standard variable name, and the standard format:\n"
@@ -417,13 +472,14 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 /// Get data from a working space
 COREARRAY_DLL_EXPORT jl_array_t* SEQ_GetData(int file_id, const char *name)
 {
+	jl_array_t *rv_ans = NULL;
 	COREARRAY_TRY
 		// File information
 		CFileInfo &File = GetFileInfo(file_id);
 		// Get data
-		return VarGetData(File, name);
+		rv_ans = VarGetData(File, name);
 	COREARRAY_CATCH
-	return NULL;
+	return rv_ans;
 }
 
 } // extern "C"
