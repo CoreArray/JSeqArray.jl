@@ -61,4 +61,44 @@ Zheng X, Gogarten S, Lawrence M, Stilp A, Conomos M, Weir BS, Laurie C, Levine D
 
 ## Examples
 
+```julia
+using JSeqArray
+
+fn = joinpath(Pkg.dir(), "JSeqArray", "demo", "data", "1KG_phase1_release_v3_chr22.gds")
+f = seqOpen(fn)
+
+seqClose(f)
+```
+
+```
+SeqArray File: JSeqArray/demo/data/1KG_phase1_release_v3_chr22.gds (1.1M)
++    [  ] *
+|--+ description   [  ] *
+|--+ sample.id   { Str8 1092 LZMA_ra(10.5%), 914B } *
+|--+ variant.id   { Int32 19773 LZMA_ra(8.39%), 6.6K } *
+|--+ position   { Int32 19773 LZMA_ra(52.0%), 41.1K } *
+|--+ chromosome   { Str8 19773 LZMA_ra(0.28%), 166B } *
+|--+ allele   { Str8 19773 LZMA_ra(22.7%), 111.9K } *
+|--+ genotype   [  ] *
+|  |--+ data   { Bit2 2x1092x19773 LZMA_ra(8.17%), 882.5K } *
+|  |--+ extra.index   { Int32 3x0 LZMA_ra, 19B } *
+|  \--+ extra   { Int16 0 LZMA_ra, 19B }
+|--+ phase   [  ]
+|  |--+ data   { Bit1 1092x19773 LZMA_ra(0.02%), 550B } *
+|  |--+ extra.index   { Int32 3x0 LZMA_ra, 19B } *
+|  \--+ extra   { Bit1 0 LZMA_ra, 19B }
+|--+ annotation   [  ]
+|  |--+ id   { Str8 19773 LZMA_ra(35.2%), 77.0K } *
+|  |--+ qual   { Float32 19773 LZMA_ra(3.62%), 2.9K } *
+|  |--+ filter   { Int32,factor 19773 LZMA_ra(0.21%), 170B } *
+|  |--+ info   [  ]
+|  \--+ format   [  ]
+\--+ sample.annotation   [  ]
+   |--+ Family.ID   { Str8 1092 LZMA_ra(15.3%), 1.1K }
+   |--+ Population   { Str8 1092 LZMA_ra(5.08%), 222B }
+   |--+ Gender   { Str8 1092 LZMA_ra(5.85%), 386B }
+   \--+ Ancestry   { Str8 1092 LZMA_ra(2.43%), 233B }
+```
+
+
 More examples will be posted here.
