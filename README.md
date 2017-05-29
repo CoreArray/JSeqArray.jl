@@ -19,6 +19,8 @@ The SeqArray format is built on top of Genomic Data Structure (GDS) data format,
 ## Installation
 
 * Development version from Github, requiring `julia >= v0.5`
+* require [jugds](https://github.com/CoreArray/jugds.jl)
+
 ```julia
 Pkg.status()
 # install package dependencies

@@ -27,7 +27,7 @@ import jugds: type_gdsfile, open_gds, close_gds, show
 
 export TypeSeqArray, TypeVarData,
 	seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterReset,
-	seqFilterPush, seqFilterPop, seqFilterGet, seqGetData
+	seqFilterPush, seqFilterPop, seqFilterGet, seqGetData, seqApply
 
 
 
@@ -146,9 +146,27 @@ end
 
 
 # Apply function over array margins
-# function seqApply(file::TypeSeqArray, name::String, fun, param=nothing,
-# 	as_is='none', bsize=1024, verbose::Bool=false)
-# end
+function seqApply(file::TypeSeqArray, name::Union{String, Vector{String}},
+		fun::Function, asis::String="none", bsize::Int=1024,
+		verbose::Bool=false; args...)
+	# variant name
+	if typeof(name)==String
+		name = [ name ]
+	end
+	# build additional parameters for the user-defined function
+	args = Vector{Any}([ x[2] for x in args ])
+	# c call
+	ans = ccall((:SEQ_BApply_Variant, LibSeqArray), Any,
+		(Cint, Vector{String}, Function, Cstring, Cint, Bool, Vector{Any}),
+		file.gds.id, name, fun, asis, bsize, verbose, args)
+	return ans
+end
+
+function seqApply(fun::Function, file::TypeSeqArray,
+		name::Union{String, Vector{String}}, asis::String="none",
+		bsize::Int=1024, verbose::Bool=false; args...)
+	return seqApply(file, name, fun, asis, bsize, verbose; args...)
+end
 
 
 # Apply Functions in Parallel

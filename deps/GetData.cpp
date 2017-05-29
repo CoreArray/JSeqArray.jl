@@ -491,4 +491,127 @@ COREARRAY_DLL_EXPORT jl_array_t* SEQ_GetData(int file_id, const char *name)
 	return rv_ans;
 }
 
+
+/// Apply functions over variants in block
+COREARRAY_DLL_EXPORT jl_array_t* SEQ_BApply_Variant(int file_id,
+	jl_value_t *name, jl_function_t *fun, const char *asis,
+	int bsize, C_BOOL verbose, jl_array_t *args)
+{
+	if (bsize < 1)
+		jl_error("'bsize' must be >= 1.");
+
+	jl_array_t *rv_ans = NULL;
+	COREARRAY_TRY
+
+		// get a list of variable name
+		vector<string> name_list;
+		{
+			size_t n = jl_array_len(name);
+			jl_value_t **p= (jl_value_t**)jl_array_data(name);
+			name_list.resize(n);
+			for (size_t i=0; i < n; i++)
+				name_list[i] = jl_string_ptr(*p++);
+		}
+		if (name_list.empty())
+			throw ErrSeqArray("'name' should be specified.");
+
+		// File information
+		CFileInfo &File = GetFileInfo(file_id);
+		// Selection
+		TSelection &Selection = File.Selection();
+
+		// the number of selected variants
+		int nVariant = File.VariantSelNum();
+		if (nVariant <= 0)
+			throw ErrSeqArray("There is no selected variant.");
+
+		// the number of data blocks
+		int NumBlock = nVariant / bsize;
+		if (nVariant % bsize) NumBlock ++;
+
+		// asis
+		if (strcmp(asis, "list")==0 || strcmp(asis, "unlist")==0)
+		{
+			jl_value_t *atype = jl_apply_array_type(jl_any_type, 1);
+			rv_ans = jl_alloc_array_1d(atype, NumBlock);
+		} else if (strcmp(asis, "none") != 0)
+		{
+			throw ErrSeqArray("'asis' should be 'none', 'list' or 'unlist'.");
+		}
+
+		// the number of variables
+		size_t nVar = name_list.size();
+		// the number of additional parameters
+		size_t nArgs = jl_array_len(args);
+		jl_value_t **ArgPtr = (jl_value_t**)jl_array_data(args);
+
+		// protect
+		JL_GC_PUSH1(&rv_ans);
+
+		// local selection
+		File.SelList.push_back(TSelection());
+		TSelection &Sel = File.SelList.back();
+		Sel.Sample = Selection.Sample;
+		Sel.Variant.resize(File.VariantNum());
+
+		C_BOOL *pBase, *pSel, *pEnd;
+		pBase = pSel = Selection.pVariant();
+		pEnd = pBase + Selection.Variant.size();
+
+		// progress object
+		CProgressStdOut progress(NumBlock, verbose!=0);
+
+		// for-loop
+		for (int idx=0; idx < NumBlock; idx++)
+		{
+			// assign sub-selection
+			{
+				C_BOOL *pNewSel = Sel.pVariant();
+				memset(pNewSel, 0, Sel.Variant.size());
+				// for-loop
+				for (int bs=bsize; bs > 0; bs--)
+				{
+					while ((pSel < pEnd) && (*pSel == FALSE))
+						pSel ++;
+					if (pSel < pEnd)
+					{
+						pNewSel[pSel - pBase] = TRUE;
+						pSel ++;
+					} else
+						break;
+				}
+			}
+
+			jl_value_t **list_args;
+			JL_GC_PUSHARGS(list_args, nVar+nArgs);
+
+			// load data
+			for (size_t i=0; i < nVar; i++)
+				list_args[i] = (jl_value_t*)VarGetData(File, name_list[i].c_str());
+			for (size_t i=0; i < nArgs; i++)
+				list_args[nVar+i] = ArgPtr[i];
+
+			// call Julia function
+			jl_value_t *rv = jl_call(fun, list_args, nVar+nArgs);
+			// save
+			if (rv_ans)
+			{
+				void **ptr = (void**)jl_array_data(rv_ans);
+				ptr[idx] = rv;
+				jl_gc_wb(rv_ans, rv);
+			}
+
+			JL_GC_POP();
+
+			progress.Forward();
+		}
+
+		File.SelList.pop_back();
+		JL_GC_POP();
+
+	COREARRAY_CATCH
+	if (!rv_ans) rv_ans = (jl_array_t*)jl_nothing;
+	return rv_ans;
+}
+
 } // extern "C"
