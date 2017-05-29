@@ -100,7 +100,7 @@ SeqArray File: JSeqArray/demo/data/1KG_phase1_release_v3_chr22.gds (1.1M)
 ```
 
 ```julia
-seqGetData(f, "genotype")
+seqGetData(f, "genotype")  # get genotype data (ploidy × sample × variant)
 
 seqClose(f)
 ```
@@ -129,4 +129,6 @@ seqClose(f)
  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x01  0x00
 ```
 
-More examples will be posted here.
+### More examples
+
+Julia tutorial with SeqArray files: [demo/tutorial.ipynb](demo/tutorial.ipynb)

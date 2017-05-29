@@ -100,10 +100,31 @@ function seqFilterSet(file::TypeSeqArray, sample_id=nothing, variant_id=nothing,
 end
 
 
-# Set a filter on variants or samples with an index vector
-function seqFilterSet2(file::TypeSeqArray, sample_id=nothing, variant_id=nothing,
-	intersect::Bool=false, verbose::Bool=true)
-
+# Set a filter on variants or samples using an index vector or a logical vector
+function seqFilterSet2(file::TypeSeqArray,
+		sample::Union{Void,Vector{Bool},Vector{Int}}=nothing,
+		variant::Union{Void,Vector{Bool},Vector{Int}}=nothing,
+		intersect::Bool=false, verbose::Bool=true)
+	# set samples
+	if sample != nothing
+		if typeof(sample) == Vector{Bool}
+			ccall((:SEQ_SetSpaceSample2B, LibSeqArray), Void,
+				(Cint,Any,Bool,Bool), file.gds.id, sample, intersect, verbose)
+		else
+			ccall((:SEQ_SetSpaceSample2I, LibSeqArray), Void,
+				(Cint,Any,Bool,Bool), file.gds.id, sample, intersect, verbose)
+		end
+	end
+	# set variants
+	if variant != nothing
+		if typeof(variant) == Vector{Bool}
+			ccall((:SEQ_SetSpaceVariant2B, LibSeqArray), Void,
+				(Cint,Any,Bool,Bool), file.gds.id, variant, intersect, verbose)
+		else
+			ccall((:SEQ_SetSpaceVariant2I, LibSeqArray), Void,
+				(Cint,Any,Bool,Bool), file.gds.id, variant, intersect, verbose)
+		end
+	end
 end
 
 

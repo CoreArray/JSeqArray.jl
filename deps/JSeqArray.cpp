@@ -104,14 +104,9 @@ JL_DLLEXPORT void SEQ_FilterPop(int file_id)
 
 /*
 /// set a working space with selected sample id
-JL_DLLEXPORT void SEQ_SetSpaceSample(PyObject *self, PyObject *args)
+JL_DLLEXPORT void SEQ_SetSpaceSample(int file_id, samp_id,
+	C_BOOL intersect, C_BOOL verbose)
 {
-	int file_id;
-	PyObject *samp_id;
-	int intersect, verbose;
-	if (!PyArg_ParseTuple(args, "iO" BSTR BSTR, &file_id, &samp_id, &intersect, &verbose))
-		return NULL;
-
 	COREARRAY_TRY
 
 		CFileInfo &File = GetFileInfo(file_id);
@@ -188,12 +183,12 @@ JL_DLLEXPORT void SEQ_SetSpaceSample(PyObject *self, PyObject *args)
 			printf("# of selected samples: %s\n", PrettyInt(n));
 		}
 
-	COREARRAY_CATCH_NONE;
+	COREARRAY_CATCH
 }
+*/
 
-
-/// set a working space with selected sample id (logical/raw vector, or index)
-JL_DLLEXPORT PyObject* SEQ_SetSpaceSample2(PyObject* gdsfile, PyObject* samp_sel,
+/// set a working space with selected sample id (logical vector, or index)
+JL_DLLEXPORT PyObject* SEQ_SetSpaceSample2B(PyObject* gdsfile, PyObject* samp_sel,
 	PyObject* intersect, PyObject* verbose)
 {
 	int intersect_flag = Rf_asLogical(intersect);
