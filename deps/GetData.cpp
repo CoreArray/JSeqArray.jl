@@ -505,7 +505,12 @@ COREARRAY_DLL_EXPORT jl_array_t* SEQ_BApply_Variant(int file_id,
 
 		// get a list of variable name
 		vector<string> name_list;
+		if (jl_is_string(name))
 		{
+			// String
+			name_list.push_back(jl_string_ptr(name));
+		} else {
+			// Vector{String}
 			size_t n = jl_array_len(name);
 			jl_value_t **p= (jl_value_t**)jl_array_data(name);
 			name_list.resize(n);

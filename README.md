@@ -100,7 +100,8 @@ SeqArray File: JSeqArray/demo/data/1KG_phase1_release_v3_chr22.gds (1.1M)
 ```
 
 ```julia
-seqGetData(f, "genotype")  # get genotype data (ploidy × sample × variant)
+# get genotype data (ploidy × sample × variant), 0xFF is missing value
+seqGetData(f, "genotype")
 
 seqClose(f)
 ```

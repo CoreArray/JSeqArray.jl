@@ -84,6 +84,7 @@ function seqOpen(filename::String, readonly::Bool=true, allow_dup::Bool=false)
 end
 
 
+
 # Close the SeqArray file
 function seqClose(file::TypeSeqArray)
 	fid = file.id
@@ -93,11 +94,33 @@ function seqClose(file::TypeSeqArray)
 end
 
 
+
 # Set a filter on variants or samples with sample or variant IDs
 function seqFilterSet(file::TypeSeqArray, sample_id=nothing, variant_id=nothing,
-	intersect::Bool=false, verbose::Bool=true)
-
+		intersect::Bool=false, verbose::Bool=true)
+	# set samples
+	if sample_id != nothing
+		sampset = Set(sample_id)
+		if !intersect
+			seqFilterReset(file, true, false, false)
+		end
+		sampid = seqGetData(file, "sample.id")
+		sampsel = [ in(x, sampset) for x in sampid ]
+		seqFilterSet2(file, sampsel, nothing, intersect, verbose)
+	end
+	# set variants
+	if variant_id != nothing
+		varset = Set(variant_id)
+		if !intersect
+			seqFilterReset(file, false, true, false)
+		end
+		varid = seqGetData(file, "variant.id")
+		varsel = [ in(x, varset) for x in varid ]
+		seqFilterSet2(file, nothing, varsel, intersect, verbose)
+	end
+	return nothing
 end
+
 
 
 # Set a filter on variants or samples using an index vector or a logical vector
@@ -108,31 +131,44 @@ function seqFilterSet2(file::TypeSeqArray,
 	# set samples
 	if sample != nothing
 		if typeof(sample) == Vector{Bool}
-			ccall((:SEQ_SetSpaceSample2B, LibSeqArray), Void,
+			ccall((:SEQ_SetSampleB, LibSeqArray), Void,
 				(Cint,Any,Bool,Bool), file.gds.id, sample, intersect, verbose)
 		else
-			ccall((:SEQ_SetSpaceSample2I, LibSeqArray), Void,
+			ccall((:SEQ_SetSampleI, LibSeqArray), Void,
 				(Cint,Any,Bool,Bool), file.gds.id, sample, intersect, verbose)
 		end
 	end
 	# set variants
 	if variant != nothing
 		if typeof(variant) == Vector{Bool}
-			ccall((:SEQ_SetSpaceVariant2B, LibSeqArray), Void,
+			ccall((:SEQ_SetVariantB, LibSeqArray), Void,
 				(Cint,Any,Bool,Bool), file.gds.id, variant, intersect, verbose)
 		else
-			ccall((:SEQ_SetSpaceVariant2I, LibSeqArray), Void,
+			ccall((:SEQ_SetVariantI, LibSeqArray), Void,
 				(Cint,Any,Bool,Bool), file.gds.id, variant, intersect, verbose)
 		end
 	end
+	return nothing
 end
+
 
 
 # Reset the filter
 function seqFilterReset(file::TypeSeqArray, sample::Bool=true,
-	variant::Bool=true, verbose::Bool=true)
-
+		variant::Bool=true, verbose::Bool=true)
+	# set samples
+	if sample
+		ccall((:SEQ_SetSampleB, LibSeqArray), Void,
+			(Cint,Any,Bool,Bool), file.gds.id, nothing, false, verbose)
+	end
+	# set variants
+	if variant
+		ccall((:SEQ_SetVariantB, LibSeqArray), Void,
+			(Cint,Any,Bool,Bool), file.gds.id, nothing, false, verbose)
+	end
+	return nothing
 end
+
 
 
 # Push a filter
@@ -142,11 +178,13 @@ function seqFilterPush(file::TypeSeqArray, reset::Bool=true)
 end
 
 
+
 # Pop a filter
 function seqFilterPop(file::TypeSeqArray)
 	ccall((:SEQ_FilterPop, LibSeqArray), Void, (Cint,), file.gds.id)
 	return nothing
 end
+
 
 
 # Get a sample/variant filter
@@ -166,16 +204,14 @@ function seqGetData(file::TypeSeqArray, name::String)
 end
 
 
+
 # Apply function over array margins
 function seqApply(file::TypeSeqArray, name::Union{String, Vector{String}},
 		fun::Function, asis::String="none", bsize::Int=1024,
 		verbose::Bool=false; args...)
-	# variant name
-	if typeof(name)==String
-		name = [ name ]
-	end
 	# build additional parameters for the user-defined function
 	args = Vector{Any}([ x[2] for x in args ])
+	# TODO: check the number of arguments
 	# c call
 	ans = ccall((:SEQ_BApply_Variant, LibSeqArray), Any,
 		(Cint, Vector{String}, Function, Cstring, Cint, Bool, Vector{Any}),

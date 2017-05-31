@@ -187,12 +187,56 @@ JL_DLLEXPORT void SEQ_SetSpaceSample(int file_id, samp_id,
 }
 */
 
-/// set a working space with selected sample id (logical vector, or index)
-JL_DLLEXPORT PyObject* SEQ_SetSpaceSample2B(PyObject* gdsfile, PyObject* samp_sel,
-	PyObject* intersect, PyObject* verbose)
+/// set a working space with selected sample id with a logical vector
+JL_DLLEXPORT void SEQ_SetSampleB(int file_id,  jl_array_t *samp_sel,
+	C_BOOL intersect, C_BOOL verbose)
 {
-	int intersect_flag = Rf_asLogical(intersect);
+	COREARRAY_TRY
 
+		CFileInfo &File = GetFileInfo(file_id);
+		TSelection &Sel = File.Selection();
+		C_BOOL *pArray = Sel.pSample();
+		size_t Count = File.SampleNum();
+
+		if (!jl_is_nothing(samp_sel))
+		{
+			if (!intersect)
+			{
+				if (jl_array_len(samp_sel) != Count)
+					throw ErrSeqArray("Invalid length of 'sample.sel'.");
+				memcpy(pArray, (void*)jl_array_data(samp_sel), Count);
+			} else {
+				if (jl_array_len(samp_sel) != File.SampleSelNum())
+				{
+					throw ErrSeqArray(
+						"Invalid length of 'sample' "
+						"(should be equal to the number of selected samples).");
+				}
+				// set selection
+				C_BOOL *p = (C_BOOL*)jl_array_data(samp_sel);
+				for (size_t i=0; i < Count; i++)
+				{
+					if (*pArray)
+						*pArray = ((*p++) != 0);
+				}
+			}
+		} else {
+			// reset the filter
+			memset(pArray, 1, Count);
+		}
+
+		int n = File.SampleSelNum();
+		if (verbose)
+			jl_printf(JL_STDOUT, "# of selected samples: %s\n", PrettyInt(n));
+
+	COREARRAY_CATCH
+}
+
+/*
+/// set a working space with selected sample id with a logical vector
+JL_DLLEXPORT void SEQ_SetSpaceSampleI(int file_id,  jl_array_t *samp_sel,
+	C_BOOL intersect, C_BOOL verbose)
+{
 	COREARRAY_TRY
 
 		CFileInfo &File = GetFileInfo(gdsfile);
