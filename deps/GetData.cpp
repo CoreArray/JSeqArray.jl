@@ -564,7 +564,7 @@ COREARRAY_DLL_EXPORT jl_array_t* SEQ_BApply_Variant(int file_id,
 		pEnd = pBase + Selection.Variant.size();
 
 		// progress object
-		CProgressStdOut progress(NumBlock, verbose!=0);
+		CProgressStdOut progress(NumBlock, verbose);
 
 		// for-loop
 		for (int idx=0; idx < NumBlock; idx++)

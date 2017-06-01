@@ -206,23 +206,20 @@ end
 
 
 # Apply function over array margins
-function seqApply(file::TypeSeqArray, name::Union{String, Vector{String}},
-		fun::Function, asis::String="none", bsize::Int=1024,
-		verbose::Bool=false; args...)
+function seqApply(fun::Function, file::TypeSeqArray,
+		name::Union{String, Vector{String}}, asis::String="none",
+		verbose::Bool=false, bsize::Int=1024; args...)
 	# build additional parameters for the user-defined function
 	args = Vector{Any}([ x[2] for x in args ])
 	# TODO: check the number of arguments
 	# c call
 	ans = ccall((:SEQ_BApply_Variant, LibSeqArray), Any,
-		(Cint, Vector{String}, Function, Cstring, Cint, Bool, Vector{Any}),
+		(Cint, Any, Function, Cstring, Cint, Bool, Vector{Any}),
 		file.gds.id, name, fun, asis, bsize, verbose, args)
+	if asis == "unlist"
+		ans = vcat(ans...)
+	end
 	return ans
-end
-
-function seqApply(fun::Function, file::TypeSeqArray,
-		name::Union{String, Vector{String}}, asis::String="none",
-		bsize::Int=1024, verbose::Bool=false; args...)
-	return seqApply(file, name, fun, asis, bsize, verbose; args...)
 end
 
 
