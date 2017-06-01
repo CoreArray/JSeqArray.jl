@@ -203,7 +203,7 @@ JL_DLLEXPORT void SEQ_SetSampleB(int file_id,  jl_array_t *samp_sel,
 			if (!intersect)
 			{
 				if (jl_array_len(samp_sel) != Count)
-					throw ErrSeqArray("Invalid length of 'sample.sel'.");
+					throw ErrSeqArray("Invalid length of 'sample'.");
 				memcpy(pArray, (void*)jl_array_data(samp_sel), Count);
 			} else {
 				if (jl_array_len(samp_sel) != File.SampleSelNum())
@@ -447,8 +447,55 @@ JL_DLLEXPORT PyObject* SEQ_SetSpaceVariant(PyObject* gdsfile, PyObject* var_id,
 
 	COREARRAY_CATCH
 }
+*/
 
 
+/// set a working space with selected variant id with a logical vector
+JL_DLLEXPORT void SEQ_SetVariantB(int file_id,  jl_array_t *var_sel,
+	C_BOOL intersect, C_BOOL verbose)
+{
+	COREARRAY_TRY
+
+		CFileInfo &File = GetFileInfo(file_id);
+		TSelection &Sel = File.Selection();
+		C_BOOL *pArray = Sel.pVariant();
+		size_t Count = File.VariantNum();
+
+		if (!jl_is_nothing(var_sel))
+		{
+			if (!intersect)
+			{
+				if (jl_array_len(var_sel) != Count)
+					throw ErrSeqArray("Invalid length of 'variant'.");
+				memcpy(pArray, (void*)jl_array_data(var_sel), Count);
+			} else {
+				if (jl_array_len(var_sel) != File.VariantSelNum())
+				{
+					throw ErrSeqArray(
+						"Invalid length of 'variant' "
+						"(should be equal to the number of selected variants).");
+				}
+				// set selection
+				C_BOOL *p = (C_BOOL*)jl_array_data(var_sel);
+				for (size_t i=0; i < Count; i++)
+				{
+					if (*pArray)
+						*pArray = ((*p++) != 0);
+				}
+			}
+		} else {
+			// reset the filter
+			memset(pArray, 1, Count);
+		}
+
+		int n = File.VariantSelNum();
+		if (verbose)
+			jl_printf(JL_STDOUT, "# of selected variants: %s\n", PrettyInt(n));
+
+	COREARRAY_CATCH
+}
+
+/*
 /// set a working space with selected variant id (logical/raw vector, or index)
 JL_DLLEXPORT PyObject* SEQ_SetSpaceVariant2(PyObject* gdsfile, PyObject* var_sel,
 	PyObject* intersect, PyObject* verbose)
@@ -568,6 +615,8 @@ JL_DLLEXPORT PyObject* SEQ_SetSpaceVariant2(PyObject* gdsfile, PyObject* var_sel
 
 	COREARRAY_CATCH
 }
+
+
 
 
 // ================================================================

@@ -294,6 +294,7 @@ jl_array_t* CApply_Variant_Geno::NeedArray()
 		return VarNode;
 	}
 */
+	return NULL;
 }
 
 void CApply_Variant_Geno::ReadData(jl_array_t *val)
@@ -324,6 +325,7 @@ jl_array_t* CApply_Variant_Dosage::NeedArray()
 	if (!VarNode) VarNode = numpy_new_uint8(SampNum);
 	return VarNode;
 */
+	return NULL;
 }
 
 void CApply_Variant_Dosage::ReadData(jl_array_t *val)
@@ -696,6 +698,7 @@ jl_array_t* CApply_Variant_NumAllele::NeedArray()
 	if (!VarNode) VarNode = numpy_new_int32(1);
 	return VarNode;
 */
+	return NULL;
 }
 
 void CApply_Variant_NumAllele::ReadData(jl_array_t *val)
