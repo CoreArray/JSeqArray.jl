@@ -96,7 +96,9 @@ end
 
 
 # Set a filter on variants or samples with sample or variant IDs
-function seqFilterSet(file::TypeSeqArray, sample_id=nothing, variant_id=nothing,
+function seqFilterSet(file::TypeSeqArray,
+		sample_id::Union{Void, Vector} = nothing,
+		variant_id::Union{Void, Vector} = nothing,
 		intersect::Bool=false, verbose::Bool=true)
 	# set samples
 	if sample_id != nothing
@@ -125,8 +127,8 @@ end
 
 # Set a filter on variants or samples using an index vector or a logical vector
 function seqFilterSet2(file::TypeSeqArray,
-		sample::Union{Void,Vector{Bool},Vector{Int}}=nothing,
-		variant::Union{Void,Vector{Bool},Vector{Int}}=nothing,
+		sample::Union{Void, Vector{Bool}, Vector{Int}}=nothing,
+		variant::Union{Void, Vector{Bool}, Vector{Int}}=nothing,
 		intersect::Bool=false, verbose::Bool=true)
 	# set samples
 	if sample != nothing

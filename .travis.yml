@@ -1,5 +1,8 @@
 language: julia
 
+env:
+  - CC=clang CXX=clang++
+
 julia:
   - release
   - nightly
