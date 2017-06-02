@@ -218,6 +218,7 @@ JL_DLLEXPORT void SEQ_SetSampleB(int file_id,  jl_array_t *samp_sel,
 				{
 					if (*pArray)
 						*pArray = ((*p++) != 0);
+					pArray ++;
 				}
 			}
 		} else {
@@ -481,6 +482,7 @@ JL_DLLEXPORT void SEQ_SetVariantB(int file_id,  jl_array_t *var_sel,
 				{
 					if (*pArray)
 						*pArray = ((*p++) != 0);
+					pArray ++;
 				}
 			}
 		} else {

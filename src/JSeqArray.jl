@@ -147,7 +147,11 @@ function seqFilterSet2(file::TypeSeqArray,
 	# set samples
 	if sample != nothing
 		if typeof(sample) != Vector{Bool}
-			flag = zeros(Bool, gds_dim(file)[2])
+			if intersect
+				flag = zeros(Bool, gds_seldim(file)[2])
+			else
+				flag = zeros(Bool, gds_dim(file)[2])
+			end
 			flag[sample] = true
 			sample = flag
 		end
@@ -157,7 +161,11 @@ function seqFilterSet2(file::TypeSeqArray,
 	# set variants
 	if variant != nothing
 		if typeof(variant) != Vector{Bool}
-			flag = zeros(Bool, gds_dim(file)[3])
+			if intersect
+				flag = zeros(Bool, gds_seldim(file)[3])
+			else
+				flag = zeros(Bool, gds_dim(file)[3])
+			end
 			flag[variant] = true
 			variant = flag
 		end

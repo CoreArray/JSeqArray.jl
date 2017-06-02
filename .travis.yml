@@ -1,7 +1,7 @@
 language: julia
 
 env:
-  - CC=clang CXX=clang++
+  - CC=clang CXX=clang
 
 julia:
   - release
