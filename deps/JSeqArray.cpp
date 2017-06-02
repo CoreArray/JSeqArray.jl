@@ -795,8 +795,8 @@ JL_DLLEXPORT PyObject* SEQ_SetChrom(PyObject* gdsfile, PyObject* include,
 
 // ================================================================
 
-/// set a working space flag with selected variant id
-JL_DLLEXPORT jl_array_t* SEQ_GetSpace(int file_id, C_BOOL sample)
+/// get the sample/variant filter
+JL_DLLEXPORT jl_array_t* SEQ_GetFilter(int file_id, C_BOOL sample)
 {
 	jl_array_t *rv_ans = NULL;
 	COREARRAY_TRY
@@ -926,8 +926,44 @@ JL_DLLEXPORT PyObject* SEQ_SplitSelection(PyObject* gdsfile, PyObject* split,
 
 	COREARRAY_CATCH
 }
+*/
 
 
+/// get the dimensions of the whole space
+JL_DLLEXPORT jl_array_t *SEQ_GetSpace(int file_id)
+{
+	jl_array_t *rv_ans = NULL;
+	COREARRAY_TRY
+		CFileInfo &File = GetFileInfo(file_id);
+		jl_value_t *atype = jl_apply_array_type(jl_int64_type, 1);
+		rv_ans = jl_alloc_array_1d(atype, 3);
+		C_Int64 *p = (C_Int64*)jl_array_data(rv_ans);
+		p[0] = File.Ploidy();
+		p[1] = File.SampleNum();
+		p[2] = File.VariantNum();
+	COREARRAY_CATCH
+	return rv_ans;
+}
+
+
+/// get the dimensions of selected space
+JL_DLLEXPORT jl_array_t *SEQ_GetSelSpace(int file_id)
+{
+	jl_array_t *rv_ans = NULL;
+	COREARRAY_TRY
+		CFileInfo &File = GetFileInfo(file_id);
+		jl_value_t *atype = jl_apply_array_type(jl_int64_type, 1);
+		rv_ans = jl_alloc_array_1d(atype, 3);
+		C_Int64 *p = (C_Int64*)jl_array_data(rv_ans);
+		p[0] = File.Ploidy();
+		p[1] = File.SampleSelNum();
+		p[2] = File.VariantSelNum();
+	COREARRAY_CATCH
+	return rv_ans;
+}
+
+
+/*
 /// set a working space with selected variant id
 JL_DLLEXPORT PyObject* SEQ_Summary(PyObject* gdsfile, PyObject* varname)
 {

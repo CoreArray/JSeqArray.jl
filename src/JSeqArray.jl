@@ -73,6 +73,20 @@ end
 
 
 
+####  Internal functions  ####
+
+function gds_dim(file::TypeSeqArray)
+	return ccall((:SEQ_GetSpace, LibSeqArray), Vector{Int64}, (Cint,),
+		file.gds.id)
+end
+
+function gds_seldim(file::TypeSeqArray)
+	return ccall((:SEQ_GetSelSpace, LibSeqArray), Vector{Int64}, (Cint,),
+		file.gds.id)
+end
+
+
+
 ####  GDS File  ####
 
 # Open a SeqArray file
@@ -127,28 +141,28 @@ end
 
 # Set a filter on variants or samples using an index vector or a logical vector
 function seqFilterSet2(file::TypeSeqArray,
-		sample::Union{Void, Vector{Bool}, Vector{Int}}=nothing,
-		variant::Union{Void, Vector{Bool}, Vector{Int}}=nothing,
+		sample::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing,
+		variant::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing,
 		intersect::Bool=false, verbose::Bool=true)
 	# set samples
 	if sample != nothing
-		if typeof(sample) == Vector{Bool}
-			ccall((:SEQ_SetSampleB, LibSeqArray), Void,
-				(Cint,Any,Bool,Bool), file.gds.id, sample, intersect, verbose)
-		else
-			ccall((:SEQ_SetSampleI, LibSeqArray), Void,
-				(Cint,Any,Bool,Bool), file.gds.id, sample, intersect, verbose)
+		if typeof(sample) != Vector{Bool}
+			flag = zeros(Bool, gds_dim(file)[2])
+			flag[sample] = true
+			sample = flag
 		end
+		ccall((:SEQ_SetSampleB, LibSeqArray), Void,
+			(Cint,Any,Bool,Bool), file.gds.id, sample, intersect, verbose)
 	end
 	# set variants
 	if variant != nothing
-		if typeof(variant) == Vector{Bool}
-			ccall((:SEQ_SetVariantB, LibSeqArray), Void,
-				(Cint,Any,Bool,Bool), file.gds.id, variant, intersect, verbose)
-		else
-			ccall((:SEQ_SetVariantI, LibSeqArray), Void,
-				(Cint,Any,Bool,Bool), file.gds.id, variant, intersect, verbose)
+		if typeof(variant) != Vector{Bool}
+			flag = zeros(Bool, gds_dim(file)[3])
+			flag[variant] = true
+			variant = flag
 		end
+		ccall((:SEQ_SetVariantB, LibSeqArray), Void,
+			(Cint,Any,Bool,Bool), file.gds.id, variant, intersect, verbose)
 	end
 	return nothing
 end
@@ -191,7 +205,7 @@ end
 
 # Get a sample/variant filter
 function seqFilterGet(file::TypeSeqArray, sample::Bool=true)
-	return ccall((:SEQ_GetSpace, LibSeqArray), Vector{Bool}, (Cint,Bool),
+	return ccall((:SEQ_GetFilter, LibSeqArray), Vector{Bool}, (Cint,Bool),
 		file.gds.id, sample)
 end
 

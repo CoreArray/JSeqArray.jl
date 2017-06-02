@@ -10,4 +10,5 @@ julia:
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.clone("https://github.com/CoreArray/jugds.jl.git"); Pkg.build("jugds")'
+  - julia -e 'Pkg.clone("https://github.com/CoreArray/JSeqArray.jl.git"); Pkg.build("JSeqArray")'
 
