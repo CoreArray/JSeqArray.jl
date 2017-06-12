@@ -26,8 +26,9 @@ import Base: joinpath, show, print_with_color, println
 import jugds: type_gdsfile, open_gds, close_gds, show
 
 export TypeSeqArray, TypeVarData,
-	seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterReset,
-	seqFilterPush, seqFilterPop, seqFilterGet, seqGetData, seqApply
+	seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterSplit,
+	seqFilterReset, seqFilterPush, seqFilterPop, seqFilterGet, seqGetData,
+	seqApply
 
 
 
@@ -75,14 +76,30 @@ end
 
 ####  Internal functions  ####
 
+# ploidy X total sample X total variant
 function gds_dim(file::TypeSeqArray)
 	return ccall((:SEQ_GetSpace, LibSeqArray), Vector{Int64}, (Cint,),
 		file.gds.id)
 end
 
+# ploidy X selected sample X selected variant
 function gds_seldim(file::TypeSeqArray)
 	return ccall((:SEQ_GetSelSpace, LibSeqArray), Vector{Int64}, (Cint,),
 		file.gds.id)
+end
+
+# split total count
+function split_count(total_count::Int64, count::Int64)
+	scale = total_count / count
+	start = 1.0
+	ans = Array{Int64, 2}(count, 3)
+	for i in 1:count
+		ans[i, 1] = round(start)
+		start += scale
+		ans[i, 2] = round(start) - 1
+		ans[i, 3] = ans[i, 2] + 1 - ans[i, 1]
+	end
+	return ans
 end
 
 
@@ -177,6 +194,25 @@ end
 
 
 
+# Set a filter on variants within a block given by the total number of blocks
+function seqFilterSplit(file::TypeSeqArray, index::Int, count::Int,
+		verbose::Bool=true)
+	if count < 1
+		error("'count' should be > 0.")
+	end
+	if index < 1 || index > count
+		error("'index' should be between 1 and $count.")
+	end
+	dm = gds_seldim(file)[3]
+	split = split_count(dm, count)
+	flag = zeros(Bool, dm)
+	flag[split[index, 1]: split[index, 2]] = true
+	seqFilterSet2(file, nothing, flag, true, verbose)
+	return nothing
+end
+
+
+
 # Reset the filter
 function seqFilterReset(file::TypeSeqArray, sample::Bool=true,
 		variant::Bool=true, verbose::Bool=true)
@@ -248,7 +284,7 @@ end
 
 
 # Apply Functions in Parallel
-# function seqRunParallel(file::TypeSeqArray, fun, param=nothing, ncpu=0,
+# function seqParallel(file::TypeSeqArray, fun, param=nothing, ncpu=0,
 #	split='by.variant', combine='unlist')
 # end
 
