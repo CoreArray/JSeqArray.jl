@@ -257,9 +257,9 @@ end
 
 ####  Display  ####
 
-function show(io::IO, file::TypeSeqArray, attr=false, all=false)
+function show(io::IO, file::TypeSeqArray; attr=false, all=false)
 	print_with_color(:bold, io, "SeqArray ")
-	show(io, file.gds, attr, all)
+	show(io, file.gds, attr=attr, all=all)
 end
 
 
