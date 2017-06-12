@@ -89,15 +89,15 @@ function gds_seldim(file::TypeSeqArray)
 end
 
 # split total count
-function split_count(total_count::Int64, count::Int64)
+function split_count(total_count::Int64, count::Int)
 	scale = total_count / count
 	start = 1.0
-	ans = Array{Int64, 2}(count, 3)
+	ans = Vector{UnitRange{Int}}(count)
 	for i in 1:count
-		ans[i, 1] = round(start)
+		st = round(start)
 		start += scale
-		ans[i, 2] = round(start) - 1
-		ans[i, 3] = ans[i, 2] + 1 - ans[i, 1]
+		ed = round(start) - 1
+		ans[i] = UnitRange{Int}(st, ed)
 	end
 	return ans
 end
@@ -203,11 +203,8 @@ function seqFilterSplit(file::TypeSeqArray, index::Int, count::Int,
 	if index < 1 || index > count
 		error("'index' should be between 1 and $count.")
 	end
-	dm = gds_seldim(file)[3]
-	split = split_count(dm, count)
-	flag = zeros(Bool, dm)
-	flag[split[index, 1]: split[index, 2]] = true
-	seqFilterSet2(file, nothing, flag, true, verbose)
+	ss = split_count(gds_seldim(file)[3], count)
+	seqFilterSet2(file, nothing, ss[index], true, verbose)
 	return nothing
 end
 
