@@ -92,14 +92,14 @@ end
 function split_count(total_count::Int64, count::Int)
 	scale = total_count / count
 	start = 1.0
-	ans = Vector{UnitRange{Int}}(count)
+	rv = Vector{UnitRange{Int}}(count)
 	for i in 1:count
 		st = round(start)
 		start += scale
 		ed = round(start) - 1
-		ans[i] = UnitRange{Int}(st, ed)
+		rv[i] = UnitRange{Int}(st, ed)
 	end
-	return ans
+	return rv
 end
 
 
@@ -280,12 +280,12 @@ end
 
 # Get data
 function seqGetData(file::TypeSeqArray, name::String)
-	ans = ccall((:SEQ_GetData, LibSeqArray), Any, (Cint,Cstring),
+	rv = ccall((:SEQ_GetData, LibSeqArray), Any, (Cint,Cstring),
 		file.gds.id, name)
-	if typeof(ans) == Vector{Any}
-		ans = TypeVarData(ans[1], ans[2])
+	if typeof(rv) == Vector{Any}
+		rv = TypeVarData(rv[1], rv[2])
 	end
-	return ans
+	return rv
 end
 
 
@@ -308,7 +308,7 @@ function seqApply(fun::Function, file::TypeSeqArray,
 	dm = gds_seldim(file)[3]  # the number of selected variants
 	bnum = div(dm, bsize)
 	bnum += mod(dm, bsize) != 0
-	ans = asis=="none" ? nothing : Vector{Any}(bnum)
+	rv = asis=="none" ? nothing : Vector{Any}(bnum)
 	# build additional parameters for the user-defined function
 	args = Vector{Any}([ x[2] for x in args ])
 	# run
@@ -327,8 +327,8 @@ function seqApply(fun::Function, file::TypeSeqArray,
 			st += bsize
 			x = [ seqGetData(file, nm) for nm in name ]
 			v = fun(x..., args...)
-			if ans != nothing
-				ans[i] = v
+			if rv != nothing
+				rv[i] = v
 			end
 			progress_forward(progress)
 		end
@@ -338,9 +338,9 @@ function seqApply(fun::Function, file::TypeSeqArray,
 	end
 	# output
 	if asis == "unlist"
-		ans = vcat(ans...)
+		rv = vcat(rv...)
 	end
-	return ans
+	return rv
 end
 
 
