@@ -294,13 +294,49 @@ end
 function seqApply(fun::Function, file::TypeSeqArray,
 		name::Union{String, Vector{String}}; asis::String="none",
 		verbose::Bool=true, bsize::Int=1024, args...)
+	# check
+	if asis!="none" && asis!="unlist" && asis!="list"
+		error("'asis' should be none, unlist or list.")
+	end
+	if bsize <= 0
+		error("'bsize' should be greater than 0.")
+	end
+	if typeof(name) == String
+		name = [ name ]
+	end
+	# initialize
+	dm = gds_seldim(file)[3]  # the number of selected variants
+	bnum = div(dm, bsize)
+	bnum += mod(dm, bsize) != 0
+	ans = asis=="none" ? nothing : Vector{Any}(bnum)
 	# build additional parameters for the user-defined function
 	args = Vector{Any}([ x[2] for x in args ])
-	# TODO: check the number of arguments
-	# c call
-	ans = ccall((:SEQ_BApply_Variant, LibSeqArray), Any,
-		(Cint, Any, Function, Cstring, Cint, Bool, Vector{Any}),
-		file.gds.id, name, fun, asis, bsize, verbose, args)
+	# run
+	seqFilterPush(file)
+	progress = progress_init(bnum, verbose)
+	try
+		idx = find(seqFilterGet(file, false))
+		st = 1
+		
+		for i in 1:bnum
+			ed = st + bsize - 1
+			if ed > dm
+				ed = dm
+			end
+			seqFilterSet2(file, nothing, idx[st:ed], false, false)
+			st += bsize
+			x = [ seqGetData(file, nm) for nm in name ]
+			v = fun(x..., args...)
+			if ans != nothing
+				ans[i] = v
+			end
+			progress_forward(progress)
+		end
+	finally
+		seqFilterPop(file)
+		progress_done(progress)
+	end
+	# output
 	if asis == "unlist"
 		ans = vcat(ans...)
 	end
@@ -309,8 +345,8 @@ end
 
 
 # Apply Functions in Parallel
-function seqParallel(fun::Function, file::TypeSeqArray, ncpu=0,
-	split::String="by.variant", combine="unlist"; args...)
+function seqParallel(fun::Function, file::TypeSeqArray; ncpu=0,
+	split::String="by.variant", combine="unlist", args...)
 end
 
 
