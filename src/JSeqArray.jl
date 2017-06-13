@@ -104,6 +104,34 @@ end
 
 
 
+####  Internal Progress Bar  ####
+
+# progress bar
+type progress_bar
+	obj::Ptr{Void}
+end
+
+function progress_init(count::Int64, verbose::Bool)
+	ptr = ccall((:SEQ_ProgressInit, LibSeqArray), Ptr{Void}, (Int64, Bool),
+		count, verbose)
+	return progress_bar(ptr)
+end
+
+function progress_forward(bar::progress_bar)
+	ccall((:SEQ_ProgressForward, LibSeqArray), Void, (Ptr{Void},), bar.obj)
+	return nothing
+end
+
+function progress_done(bar::progress_bar)
+	ccall((:SEQ_ProgressDone, LibSeqArray), Void, (Ptr{Void},), bar.obj)
+	bar.obj = C_NULL
+	return nothing
+end
+
+
+
+
+
 ####  GDS File  ####
 
 # Open a SeqArray file
@@ -172,7 +200,7 @@ function seqFilterSet2(file::TypeSeqArray,
 			flag[sample] = true
 			sample = flag
 		end
-		ccall((:SEQ_SetSampleB, LibSeqArray), Void,
+		ccall((:SEQ_SetSample, LibSeqArray), Void,
 			(Cint,Any,Bool,Bool), file.gds.id, sample, intersect, verbose)
 	end
 	# set variants
@@ -186,7 +214,7 @@ function seqFilterSet2(file::TypeSeqArray,
 			flag[variant] = true
 			variant = flag
 		end
-		ccall((:SEQ_SetVariantB, LibSeqArray), Void,
+		ccall((:SEQ_SetVariant, LibSeqArray), Void,
 			(Cint,Any,Bool,Bool), file.gds.id, variant, intersect, verbose)
 	end
 	return nothing
@@ -215,12 +243,12 @@ function seqFilterReset(file::TypeSeqArray, sample::Bool=true,
 		variant::Bool=true, verbose::Bool=true)
 	# set samples
 	if sample
-		ccall((:SEQ_SetSampleB, LibSeqArray), Void,
+		ccall((:SEQ_SetSample, LibSeqArray), Void,
 			(Cint,Any,Bool,Bool), file.gds.id, nothing, false, verbose)
 	end
 	# set variants
 	if variant
-		ccall((:SEQ_SetVariantB, LibSeqArray), Void,
+		ccall((:SEQ_SetVariant, LibSeqArray), Void,
 			(Cint,Any,Bool,Bool), file.gds.id, nothing, false, verbose)
 	end
 	return nothing
@@ -265,7 +293,7 @@ end
 # Apply function over array margins
 function seqApply(fun::Function, file::TypeSeqArray,
 		name::Union{String, Vector{String}}; asis::String="none",
-		verbose::Bool=false, bsize::Int=1024, args...)
+		verbose::Bool=true, bsize::Int=1024, args...)
 	# build additional parameters for the user-defined function
 	args = Vector{Any}([ x[2] for x in args ])
 	# TODO: check the number of arguments
@@ -281,9 +309,9 @@ end
 
 
 # Apply Functions in Parallel
-# function seqParallel(fun::Function, file::TypeSeqArray, param=nothing, ncpu=0,
-# 	split::String="by.variant", combine='unlist'; args...)
-# end
+function seqParallel(fun::Function, file::TypeSeqArray, ncpu=0,
+	split::String="by.variant", combine="unlist"; args...)
+end
 
 
 

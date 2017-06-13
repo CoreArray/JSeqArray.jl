@@ -67,6 +67,36 @@ JL_DLLEXPORT void SEQ_File_Done(int file_id)
 
 
 // ===========================================================
+// Progress bar
+// ===========================================================
+
+JL_DLLEXPORT void *SEQ_ProgressInit(C_Int64 count, C_BOOL verbose)
+{
+	return new CProgressStdOut(count, verbose);
+}
+
+JL_DLLEXPORT void SEQ_ProgressForward(void *ptr)
+{
+	if (ptr)
+	{
+		CProgressStdOut *obj = (CProgressStdOut*)ptr;
+		obj->Forward();
+	}
+}
+
+JL_DLLEXPORT void SEQ_ProgressDone(void *ptr)
+{
+	if (ptr)
+	{
+		CProgressStdOut *obj = (CProgressStdOut*)ptr;
+		delete obj;
+	}
+}
+
+
+
+
+// ===========================================================
 // Set a working space
 // ===========================================================
 
@@ -102,93 +132,9 @@ JL_DLLEXPORT void SEQ_FilterPop(int file_id)
 	COREARRAY_CATCH
 }
 
-/*
-/// set a working space with selected sample id
-JL_DLLEXPORT void SEQ_SetSpaceSample(int file_id, samp_id,
-	C_BOOL intersect, C_BOOL verbose)
-{
-	COREARRAY_TRY
-
-		CFileInfo &File = GetFileInfo(file_id);
-		TSelection &Sel = File.Selection();
-		C_BOOL *pArray = Sel.pSample();
-		int Count = File.SampleNum();
-		PdAbstractArray varSamp = File.GetObj("sample.id", TRUE);
-
-		if (samp_id == Py_None)
-		{
-			memset(pArray, TRUE, Count);
-		} else if (numpy_is_array_or_list(samp_id))
-		{
-			if (numpy_is_array_int(samp_id))
-			{
-				// initialize
-				set<int> set_id;
-				{
-					vector<int> ary;
-					numpy_to_int32(samp_id, ary);
-					set_id.insert(ary.begin(), ary.end());
-				}
-
-				// sample id
-				vector<int> sample_id(Count);
-				C_Int32 _st=0, _cnt=Count;
-				GDS_Array_ReadData(varSamp, &_st, &_cnt, &sample_id[0], svInt32);
-
-				// set selection
-				if (!intersect)
-				{
-					for (int i=0; i < Count; i++)
-						*pArray++ = (set_id.find(sample_id[i]) != set_id.end());
-				} else {
-					for (int i=0; i < Count; i++, pArray++)
-					{
-						if (*pArray)
-							*pArray = (set_id.find(sample_id[i]) != set_id.end());
-					}
-				}
-			} else {
-				// initialize
-				set<string> set_id;
-				{
-					vector<string> ary;
-					numpy_to_string(samp_id, ary);
-					set_id.insert(ary.begin(), ary.end());
-				}
-
-				// sample id
-				vector<string> sample_id(Count);
-				C_Int32 _st=0, _cnt=Count;
-				GDS_Array_ReadData(varSamp, &_st, &_cnt, &sample_id[0], svStrUTF8);
-
-				// set selection
-				if (!intersect)
-				{
-					for (int i=0; i < Count; i++)
-						*pArray++ = (set_id.find(sample_id[i]) != set_id.end());
-				} else {
-					for (int i=0; i < Count; i++, pArray++)
-					{
-						if (*pArray)
-							*pArray = (set_id.find(sample_id[i]) != set_id.end());
-					}
-				}
-			}
-		} else
-			throw ErrSeqArray("Invalid type of 'sample.id'.");
-
-		if (verbose)
-		{
-			int n = File.SampleSelNum();
-			printf("# of selected samples: %s\n", PrettyInt(n));
-		}
-
-	COREARRAY_CATCH
-}
-*/
 
 /// set a working space with selected sample id with a logical vector
-JL_DLLEXPORT void SEQ_SetSampleB(int file_id,  jl_array_t *samp_sel,
+JL_DLLEXPORT void SEQ_SetSample(int file_id,  jl_array_t *samp_sel,
 	C_BOOL intersect, C_BOOL verbose)
 {
 	COREARRAY_TRY
@@ -233,226 +179,9 @@ JL_DLLEXPORT void SEQ_SetSampleB(int file_id,  jl_array_t *samp_sel,
 	COREARRAY_CATCH
 }
 
-/*
-/// set a working space with selected sample id with a logical vector
-JL_DLLEXPORT void SEQ_SetSpaceSampleI(int file_id,  jl_array_t *samp_sel,
-	C_BOOL intersect, C_BOOL verbose)
-{
-	COREARRAY_TRY
-
-		CFileInfo &File = GetFileInfo(gdsfile);
-		TSelection &Sel = File.Selection();
-		C_BOOL *pArray = Sel.pSample();
-		int Count = File.SampleNum();
-
-		if (Rf_isLogical(samp_sel) || IS_RAW(samp_sel))
-		{
-			// a logical vector for selected samples
-			if (!intersect_flag)
-			{
-				if (XLENGTH(samp_sel) != Count)
-					throw ErrSeqArray("Invalid length of 'sample.sel'.");
-				// set selection
-				if (Rf_isLogical(samp_sel))
-				{
-					int *base = LOGICAL(samp_sel);
-					for (int i=0; i < Count; i++)
-						*pArray++ = ((*base++) == TRUE);
-				} else {
-					Rbyte *base = RAW(samp_sel);
-					for (int i=0; i < Count; i++)
-						*pArray++ = ((*base++) != 0);
-				}
-			} else {
-				if (XLENGTH(samp_sel) != File.SampleSelNum())
-				{
-					throw ErrSeqArray(
-						"Invalid length of 'sample.sel' "
-						"(should be equal to the number of selected samples).");
-				}
-				// set selection
-				if (Rf_isLogical(samp_sel))
-				{
-					int *base = LOGICAL(samp_sel);
-					for (int i=0; i < Count; i++, pArray++)
-					{
-						if (*pArray)
-							*pArray = ((*base++) == TRUE);
-					}
-				} else {
-					Rbyte *base = RAW(samp_sel);
-					for (int i=0; i < Count; i++)
-					{
-						if (*pArray)
-							*pArray = ((*base++) != 0);
-					}
-				}
-			}
-		} else if (Rf_isInteger(samp_sel) || Rf_isReal(samp_sel))
-		{
-			if (Rf_isReal(samp_sel))
-				samp_sel = AS_INTEGER(samp_sel);
-
-			if (!intersect_flag)
-			{
-				int *pI = INTEGER(samp_sel);
-				R_xlen_t N = XLENGTH(samp_sel);
-				// check
-				for (R_xlen_t i=0; i < N; i++)
-				{
-					int I = *pI ++;
-					if ((I != NA_INTEGER) && ((I < 1) || (I > Count)))
-						throw ErrSeqArray("Out of range 'sample.sel'.");
-				}
-				// set values
-				memset((void*)pArray, 0, Count);
-				pI = INTEGER(samp_sel);
-				for (R_xlen_t i=0; i < N; i++)
-				{
-					int I = *pI ++;
-					if (I != NA_INTEGER) pArray[I-1] = TRUE;
-				}
-			} else {
-				int Cnt = File.SampleSelNum();
-				int *pI = INTEGER(samp_sel);
-				R_xlen_t N = XLENGTH(samp_sel);
-				// check
-				for (R_xlen_t i=0; i < N; i++)
-				{
-					int I = *pI ++;
-					if ((I != NA_INTEGER) && ((I < 1) || (I > Cnt)))
-						throw ErrSeqArray("Out of range 'sample.sel'.");
-				}
-				// get the current index
-				vector<int> Idx;
-				Idx.reserve(Cnt);
-				for (int i=0; i < Count; i++)
-				{
-					if (pArray[i]) Idx.push_back(i);
-				}
-				// set values
-				memset((void*)pArray, 0, Count);
-				pI = INTEGER(samp_sel);
-				for (R_xlen_t i=0; i < N; i++)
-				{
-					int I = *pI ++;
-					if (I != NA_INTEGER) pArray[Idx[I-1]] = TRUE;
-				}
-			}
-		} else if (Rf_isNull(samp_sel))
-		{
-			memset(pArray, TRUE, Count);
-		} else
-			throw ErrSeqArray("Invalid type of 'sample.sel'.");
-
-		int n = File.SampleSelNum();
-		if (Rf_asLogical(verbose) == TRUE)
-			Rprintf("# of selected samples: %s\n", PrettyInt(n));
-
-	COREARRAY_CATCH
-}
-
-
-/// set a working space with selected variant id
-JL_DLLEXPORT PyObject* SEQ_SetSpaceVariant(PyObject* gdsfile, PyObject* var_id,
-	PyObject* intersect, PyObject* verbose)
-{
-	int intersect_flag = Rf_asLogical(intersect);
-
-	COREARRAY_TRY
-
-		CFileInfo &File = GetFileInfo(gdsfile);
-		TSelection &Sel = File.Selection();
-		C_BOOL *pArray = Sel.pVariant();
-		int Count = File.VariantNum();
-		PdAbstractArray varVariant = File.GetObj("variant.id", TRUE);
-
-		if (Rf_isInteger(var_id))
-		{
-			// initialize
-			set<int> set_id;
-			set_id.insert(INTEGER(var_id), INTEGER(var_id) + XLENGTH(var_id));
-			// sample id
-			vector<int> var_id(Count);
-			C_Int32 _st=0, _cnt=Count;
-			GDS_Array_ReadData(varVariant, &_st, &_cnt, &var_id[0], svInt32);
-
-			// set selection
-			if (!intersect_flag)
-			{
-				for (int i=0; i < Count; i++)
-					*pArray++ = (set_id.find(var_id[i]) != set_id.end());
-			} else {
-				for (int i=0; i < Count; i++, pArray++)
-				{
-					if (*pArray)
-						*pArray = (set_id.find(var_id[i]) != set_id.end());
-				}
-			}
-		} else if (Rf_isReal(var_id))
-		{
-			// initialize
-			set<double> set_id;
-			set_id.insert(REAL(var_id), REAL(var_id) + XLENGTH(var_id));
-			// variant id
-			vector<double> var_id(Count);
-			C_Int32 _st=0, _cnt=Count;
-			GDS_Array_ReadData(varVariant, &_st, &_cnt, &var_id[0], svFloat64);
-
-			// set selection
-			if (!intersect_flag)
-			{
-				for (int i=0; i < Count; i++)
-					*pArray++ = (set_id.find(var_id[i]) != set_id.end());
-			} else {
-				for (int i=0; i < Count; i++, pArray++)
-				{
-					if (*pArray)
-						*pArray = (set_id.find(var_id[i]) != set_id.end());
-				}
-			}
-		} else if (Rf_isString(var_id))
-		{
-			// initialize
-			set<string> set_id;
-			R_xlen_t m = XLENGTH(var_id);
-			for (R_xlen_t i=0; i < m; i++)
-				set_id.insert(string(CHAR(STRING_ELT(var_id, i))));
-			// sample id
-			vector<string> var_id(Count);
-			C_Int32 _st=0, _cnt=Count;
-			GDS_Array_ReadData(varVariant, &_st, &_cnt, &var_id[0], svStrUTF8);
-
-			// set selection
-			// set selection
-			if (!intersect_flag)
-			{
-				for (int i=0; i < Count; i++)
-					*pArray++ = (set_id.find(var_id[i]) != set_id.end());
-			} else {
-				for (int i=0; i < Count; i++, pArray++)
-				{
-					if (*pArray)
-						*pArray = (set_id.find(var_id[i]) != set_id.end());
-				}
-			}
-		} else if (Rf_isNull(var_id))
-		{
-			memset(pArray, TRUE, Count);
-		} else
-			throw ErrSeqArray("Invalid type of 'variant.id'.");
-
-		int n = File.VariantSelNum();
-		if (Rf_asLogical(verbose) == TRUE)
-			Rprintf("# of selected variants: %s\n", PrettyInt(n));
-
-	COREARRAY_CATCH
-}
-*/
-
 
 /// set a working space with selected variant id with a logical vector
-JL_DLLEXPORT void SEQ_SetVariantB(int file_id,  jl_array_t *var_sel,
+JL_DLLEXPORT void SEQ_SetVariant(int file_id,  jl_array_t *var_sel,
 	C_BOOL intersect, C_BOOL verbose)
 {
 	COREARRAY_TRY
@@ -497,130 +226,8 @@ JL_DLLEXPORT void SEQ_SetVariantB(int file_id,  jl_array_t *var_sel,
 	COREARRAY_CATCH
 }
 
+
 /*
-/// set a working space with selected variant id (logical/raw vector, or index)
-JL_DLLEXPORT PyObject* SEQ_SetSpaceVariant2(PyObject* gdsfile, PyObject* var_sel,
-	PyObject* intersect, PyObject* verbose)
-{
-	int intersect_flag = Rf_asLogical(intersect);
-
-	COREARRAY_TRY
-
-		CFileInfo &File = GetFileInfo(gdsfile);
-		TSelection &Sel = File.Selection();
-		C_BOOL *pArray = Sel.pVariant();
-		int Count = File.VariantNum();
-
-		if (Rf_isLogical(var_sel) || IS_RAW(var_sel))
-		{
-			// a logical vector for selected samples
-			if (!intersect_flag)
-			{
-				if (XLENGTH(var_sel) != Count)
-					throw ErrSeqArray("Invalid length of 'variant.sel'.");
-				// set selection
-				if (Rf_isLogical(var_sel))
-				{
-					int *base = LOGICAL(var_sel);
-					for (int i=0; i < Count; i++)
-						*pArray++ = ((*base++) == TRUE);
-				} else {
-					Rbyte *base = RAW(var_sel);
-					for (int i=0; i < Count; i++)
-						*pArray++ = ((*base++) != 0);
-				}
-			} else {
-				if (XLENGTH(var_sel) != File.VariantSelNum())
-				{
-					throw ErrSeqArray(
-						"Invalid length of 'variant.sel' "
-						"(should be equal to the number of selected variants).");
-				}
-				// set selection
-				if (Rf_isLogical(var_sel))
-				{
-					int *base = LOGICAL(var_sel);
-					for (int i=0; i < Count; i++, pArray++)
-					{
-						if (*pArray)
-							*pArray = ((*base++) == TRUE);
-					}
-				} else {
-					Rbyte *base = RAW(var_sel);
-					for (int i=0; i < Count; i++)
-					{
-						if (*pArray)
-							*pArray = ((*base++) != 0);
-					}
-				}
-			}
-		} else if (Rf_isInteger(var_sel) || Rf_isReal(var_sel))
-		{
-			if (Rf_isReal(var_sel))
-				var_sel = AS_INTEGER(var_sel);
-
-			if (!intersect_flag)
-			{
-				int *pI = INTEGER(var_sel);
-				R_xlen_t N = XLENGTH(var_sel);
-				// check
-				for (R_xlen_t i=0; i < N; i++)
-				{
-					int I = *pI ++;
-					if ((I != NA_INTEGER) && ((I < 1) || (I > Count)))
-						throw ErrSeqArray("Out of range 'variant.sel'.");
-				}
-				// set values
-				memset((void*)pArray, 0, Count);
-				pI = INTEGER(var_sel);
-				for (R_xlen_t i=0; i < N; i++)
-				{
-					int I = *pI ++;
-					if (I != NA_INTEGER) pArray[I-1] = TRUE;
-				}
-			} else {
-				int Cnt = File.VariantSelNum();
-				int *pI = INTEGER(var_sel);
-				R_xlen_t N = XLENGTH(var_sel);
-				// check
-				for (R_xlen_t i=0; i < N; i++)
-				{
-					int I = *pI ++;
-					if ((I != NA_INTEGER) && ((I < 1) || (I > Cnt)))
-						throw ErrSeqArray("Out of range 'variant.sel'.");
-				}
-				// get the current index
-				vector<int> Idx;
-				Idx.reserve(Cnt);
-				for (int i=0; i < Count; i++)
-				{
-					if (pArray[i]) Idx.push_back(i);
-				}
-				// set values
-				memset((void*)pArray, 0, Count);
-				pI = INTEGER(var_sel);
-				for (R_xlen_t i=0; i < N; i++)
-				{
-					int I = *pI ++;
-					if (I != NA_INTEGER) pArray[Idx[I-1]] = TRUE;
-				}
-			}
-		} else if (Rf_isNull(var_sel))
-		{
-			memset(pArray, TRUE, Count);
-		} else
-			throw ErrSeqArray("Invalid type of 'variant.sel'.");
-
-		int n = File.VariantSelNum();
-		if (Rf_asLogical(verbose) == TRUE)
-			Rprintf("# of selected variants: %s\n", PrettyInt(n));
-
-	COREARRAY_CATCH
-}
-
-
-
-
 // ================================================================
 
 static bool is_numeric(const string &txt)
@@ -952,48 +559,6 @@ JL_DLLEXPORT PyObject* SEQ_IntAssign(PyObject* Dst, PyObject* Src)
 {
 	INTEGER(Dst)[0] = Rf_asInteger(Src);
 	return R_NilValue;
-}
-
-
-inline static void CvtDNAString(char *p)
-{
-	char c;
-	while ((c = *p))
-	{
-		c = toupper(c);
-		if (c!='A' && c!='C' && c!='G' && c!='T' && c!='M' && c!='R' &&
-			c!='W' && c!='S' && c!='Y' && c!='K' && c!='V' && c!='H' &&
-			c!='D' && c!='B' && c!='N' && c!='-' && c!='+' && c!='.')
-		{
-			c = '.';
-		}
-		*p++ = c;
-	}
-}
-
-JL_DLLEXPORT PyObject* SEQ_DNAStrSet(PyObject* x)
-{
-	if (Rf_isVectorList(x))
-	{
-		size_t nlen = XLENGTH(x);	
-		for (size_t i=0; i < nlen; i++)
-		{
-			PyObject* s = VECTOR_ELT(x, i);
-			if (Rf_isString(s))
-			{
-				size_t n = XLENGTH(s);
-				for (size_t j=0; j < n; j++)
-					CvtDNAString((char*)CHAR(STRING_ELT(s, j)));
-			}
-		}
-	} else if (Rf_isString(x))
-	{
-		size_t n = XLENGTH(x);
-		for (size_t i=0; i < n; i++)
-			CvtDNAString((char*)CHAR(STRING_ELT(x, i)));
-	}
-	
-	return x;
 }
 
 
