@@ -229,7 +229,7 @@ end
 
 
 # Push a filter
-function seqFilterPush(file::TypeSeqArray, reset::Bool=true)
+function seqFilterPush(file::TypeSeqArray, reset::Bool=false)
 	ccall((:SEQ_FilterPush, LibSeqArray), Void, (Cint,Bool), file.gds.id, reset)
 	return nothing
 end
@@ -264,8 +264,8 @@ end
 
 # Apply function over array margins
 function seqApply(fun::Function, file::TypeSeqArray,
-		name::Union{String, Vector{String}}, asis::String="none",
-		verbose::Bool=false, bsize::Int=1024; args...)
+		name::Union{String, Vector{String}}; asis::String="none",
+		verbose::Bool=false, bsize::Int=1024, args...)
 	# build additional parameters for the user-defined function
 	args = Vector{Any}([ x[2] for x in args ])
 	# TODO: check the number of arguments
@@ -281,8 +281,8 @@ end
 
 
 # Apply Functions in Parallel
-# function seqParallel(file::TypeSeqArray, fun, param=nothing, ncpu=0,
-#	split='by.variant', combine='unlist')
+# function seqParallel(fun::Function, file::TypeSeqArray, param=nothing, ncpu=0,
+# 	split::String="by.variant", combine='unlist'; args...)
 # end
 
 
