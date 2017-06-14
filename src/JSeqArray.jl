@@ -354,15 +354,15 @@ process_count = 0
 
 # Apply Functions in Parallel
 function seqParallel(fun::Function, file::TypeSeqArray;
-		split::String="by.variant", asis::Union{String, Function}="unlist",
+		split::String="by.variant", combine::Union{String, Function}="unlist",
 		args...)
 	# check
 	if split!="by.variant" && split!="none"
 		error("'split' should be \"by.varaint\" or \"none\".");
 	end
-	if typeof(asis) == String
-		if asis!="none" && asis!="unlist" && asis!="list"
-			error("'asis' should be \"none\", \"unlist\" or \"list\".")
+	if typeof(combine) == String
+		if combine!="none" && combine!="unlist" && combine!="list"
+			error("'combine' should be \"none\", \"unlist\" or \"list\".")
 		end
 	end
 	args = Vector{Any}([ x[2] for x in args ])
@@ -391,7 +391,7 @@ function seqParallel(fun::Function, file::TypeSeqArray;
 		end
 	end
 	# remote run
-	if typeof(asis) == String
+	if typeof(combine) == String
 		rv = [ fetch(r) for r in rc ]
 		err = false
 		for i in rv
@@ -403,9 +403,9 @@ function seqParallel(fun::Function, file::TypeSeqArray;
 		if err
 			error("RemoteException")
 		end
-		rv = asis=="none" ? nothing : (asis=="unlist" ? vcat(rv...) : rv)
+		rv = combine=="none" ? nothing : (combine=="unlist" ? vcat(rv...) : rv)
 	else
-		rv = reduce(asis, map(fetch, rc))
+		rv = reduce(combine, map(fetch, rc))
 	end
 	# output
 	return rv
