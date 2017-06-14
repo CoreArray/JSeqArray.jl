@@ -372,7 +372,7 @@ function seqParallel(fun::Function, file::TypeSeqArray;
 	fn = file.gds.filename
 	sel = seqFilterGet(file, false)
 	for i in 1:length(ws)
-		rc[i] = remotecall(ws[i], i, length(ws), fn, sel, fun, split) do i, cnt, fn, sel, fun, split
+		rc[i] = remotecall(ws[i], i, length(ws), fn, sel, fun, split, args) do i, cnt, fn, sel, fun, split, args
 			process_index = i
 			process_count = cnt
 			rv = nothing
@@ -382,7 +382,7 @@ function seqParallel(fun::Function, file::TypeSeqArray;
 				seqFilterSplit(gdsfile, i, cnt, false)
 			end
 			try
-				rv = fun(gdsfile)
+				rv = fun(gdsfile, args...)
 			finally
 				seqClose(gdsfile)
 			end
