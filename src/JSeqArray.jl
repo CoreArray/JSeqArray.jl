@@ -28,7 +28,7 @@ import jugds: type_gdsfile, open_gds, close_gds, show
 export TypeSeqArray, TypeVarData,
 	seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterSplit,
 	seqFilterReset, seqFilterPush, seqFilterPop, seqFilterGet, seqGetData,
-	seqApply
+	seqApply, seqParallel
 
 
 
@@ -146,7 +146,7 @@ end
 
 # Close the SeqArray file
 function seqClose(file::TypeSeqArray)
-	fid = file.id
+	fid = file.gds.id
 	close_gds(file.gds)
 	ccall((:SEQ_File_Done, LibSeqArray), Void, (Cint,), fid)
 	return nothing
@@ -296,7 +296,7 @@ function seqApply(fun::Function, file::TypeSeqArray,
 		verbose::Bool=true, bsize::Int=1024, args...)
 	# check
 	if asis!="none" && asis!="unlist" && asis!="list"
-		error("'asis' should be none, unlist or list.")
+		error("'asis' should be \"none\", \"unlist\" or \"list\".")
 	end
 	if bsize <= 0
 		error("'bsize' should be greater than 0.")
@@ -344,9 +344,70 @@ function seqApply(fun::Function, file::TypeSeqArray,
 end
 
 
+
+####  Parallel functions  ####
+
+# internal variables used for identifying processes
+process_index = 0
+process_count = 0
+
+
 # Apply Functions in Parallel
-function seqParallel(fun::Function, file::TypeSeqArray; ncpu=0,
-	split::String="by.variant", combine="unlist", args...)
+function seqParallel(fun::Function, file::TypeSeqArray;
+		split::String="by.variant", asis::Union{String, Function}="unlist",
+		args...)
+	# check
+	if split!="by.variant" && split!="none"
+		error("'split' should be \"by.varaint\" or \"none\".");
+	end
+	if typeof(asis) == String
+		if asis!="none" && asis!="unlist" && asis!="list"
+			error("'asis' should be \"none\", \"unlist\" or \"list\".")
+		end
+	end
+	# set remotecall
+	@everywhere using JSeqArray
+	ws = workers()
+	rc = Vector{Any}(length(ws))
+	fn = file.gds.filename
+	sel = seqFilterGet(file, false)
+	for i in 1:length(ws)
+		rc[i] = remotecall(ws[i], i, length(ws), fn, sel, fun, split) do i, cnt, fn, sel, fun, split
+			process_index = i
+			process_count = cnt
+			rv = nothing
+			gdsfile = seqOpen(fn, true, true)
+			seqFilterSet2(gdsfile, nothing, sel, false, false)
+			if split=="by.variant"
+				seqFilterSplit(gdsfile, i, cnt, false)
+			end
+			try
+				rv = fun(gdsfile)
+			finally
+				seqClose(gdsfile)
+			end
+			return rv
+		end
+	end
+	# remote run
+	if typeof(asis) == String
+		rv = [ fetch(r) for r in rc ]
+		err = false
+		for i in rv
+			if typeof(i) == RemoteException
+				println(i)
+				err = true
+			end
+		end
+		if err
+			error("RemoteException")
+		end
+		rv = asis=="none" ? nothing : (asis=="unlist" ? vcat(rv...) : rv)
+	else
+		rv = reduce(asis, map(fetch, rc))
+	end
+	# output
+	return rv
 end
 
 

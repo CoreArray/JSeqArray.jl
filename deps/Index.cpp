@@ -880,6 +880,7 @@ void CProgressStdOut::ShowProgress()
 		{
 			s = difftime(_last_time, _start_time);
 			printf("\r[%s] 100%%, completed in %s\n", bar, time_str(s));
+			fflush(stdout);
 		} else if ((interval >= 5) || (Counter <= 0))
 		{
 			_last_time = now;
