@@ -365,6 +365,7 @@ function seqParallel(fun::Function, file::TypeSeqArray;
 			error("'asis' should be \"none\", \"unlist\" or \"list\".")
 		end
 	end
+	args = Vector{Any}([ x[2] for x in args ])
 	# set remotecall
 	@everywhere using JSeqArray
 	ws = workers()
