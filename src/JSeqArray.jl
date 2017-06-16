@@ -25,7 +25,7 @@ using jugds
 import Base: joinpath, show, print_with_color, println
 import jugds: type_gdsfile, open_gds, close_gds, show
 
-export TypeSeqArray, TypeVarData,
+export TypeSeqFile, TypeVarData,
 	seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterSplit,
 	seqFilterReset, seqFilterPush, seqFilterPop, seqFilterGet, seqGetData,
 	seqApply, seqParallel
@@ -61,13 +61,13 @@ end
 ####  Type of GDS File and Node	 ####
 
 # Type for a SeqArray file
-type TypeSeqArray <: anygdsfile
+type TypeSeqFile <: anygdsfile
 	gds::type_gdsfile
 	auxiliary::Any
 end
 
 # Type for variable-length data
-type TypeVarData
+immutable TypeVarData
 	index::Vector{Int32}
 	data::Any
 end
@@ -77,13 +77,13 @@ end
 ####  Internal functions  ####
 
 # ploidy X total sample X total variant
-function gds_dim(file::TypeSeqArray)
+function gds_dim(file::TypeSeqFile)
 	return ccall((:SEQ_GetSpace, LibSeqArray), Vector{Int64}, (Cint,),
 		file.gds.id)
 end
 
 # ploidy X selected sample X selected variant
-function gds_seldim(file::TypeSeqArray)
+function gds_seldim(file::TypeSeqFile)
 	return ccall((:SEQ_GetSelSpace, LibSeqArray), Vector{Int64}, (Cint,),
 		file.gds.id)
 end
@@ -139,13 +139,13 @@ function seqOpen(filename::String, readonly::Bool=true, allow_dup::Bool=false)
 	ff = open_gds(filename, readonly, allow_dup)
 	# TODO: check file structure
 	ccall((:SEQ_File_Init, LibSeqArray), Void, (Cint,), ff.id)
-	return TypeSeqArray(ff, nothing)
+	return TypeSeqFile(ff, nothing)
 end
 
 
 
 # Close the SeqArray file
-function seqClose(file::TypeSeqArray)
+function seqClose(file::TypeSeqFile)
 	fid = file.gds.id
 	close_gds(file.gds)
 	ccall((:SEQ_File_Done, LibSeqArray), Void, (Cint,), fid)
@@ -155,7 +155,7 @@ end
 
 
 # Set a filter on variants or samples with sample or variant IDs
-function seqFilterSet(file::TypeSeqArray,
+function seqFilterSet(file::TypeSeqFile,
 		sample_id::Union{Void, Vector} = nothing,
 		variant_id::Union{Void, Vector} = nothing,
 		intersect::Bool=false, verbose::Bool=true)
@@ -185,13 +185,13 @@ end
 
 
 # Set a filter on variants or samples using an index vector or a logical vector
-function seqFilterSet2(file::TypeSeqArray,
+function seqFilterSet2(file::TypeSeqFile,
 		sample::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing,
 		variant::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing,
 		intersect::Bool=false, verbose::Bool=true)
 	# set samples
 	if sample != nothing
-		if typeof(sample) != Vector{Bool}
+		if !isa(sample, Vector{Bool})
 			if intersect
 				flag = zeros(Bool, gds_seldim(file)[2])
 			else
@@ -205,7 +205,7 @@ function seqFilterSet2(file::TypeSeqArray,
 	end
 	# set variants
 	if variant != nothing
-		if typeof(variant) != Vector{Bool}
+		if !isa(variant, Vector{Bool})
 			if intersect
 				flag = zeros(Bool, gds_seldim(file)[3])
 			else
@@ -223,13 +223,13 @@ end
 
 
 # Set a filter on variants within a block given by the total number of blocks
-function seqFilterSplit(file::TypeSeqArray, index::Int, count::Int,
+function seqFilterSplit(file::TypeSeqFile, index::Int, count::Int,
 		verbose::Bool=true)
 	if count < 1
-		error("'count' should be > 0.")
+		throw(ArgumentError("'count' should be > 0."))
 	end
 	if index < 1 || index > count
-		error("'index' should be between 1 and $count.")
+		throw(ArgumentError("'index' should be between 1 and $count."))
 	end
 	ss = split_count(gds_seldim(file)[3], count)
 	seqFilterSet2(file, nothing, ss[index], true, verbose)
@@ -239,7 +239,7 @@ end
 
 
 # Reset the filter
-function seqFilterReset(file::TypeSeqArray, sample::Bool=true,
+function seqFilterReset(file::TypeSeqFile, sample::Bool=true,
 		variant::Bool=true, verbose::Bool=true)
 	# set samples
 	if sample
@@ -257,7 +257,7 @@ end
 
 
 # Push a filter
-function seqFilterPush(file::TypeSeqArray, reset::Bool=false)
+function seqFilterPush(file::TypeSeqFile, reset::Bool=false)
 	ccall((:SEQ_FilterPush, LibSeqArray), Void, (Cint,Bool), file.gds.id, reset)
 	return nothing
 end
@@ -265,7 +265,7 @@ end
 
 
 # Pop a filter
-function seqFilterPop(file::TypeSeqArray)
+function seqFilterPop(file::TypeSeqFile)
 	ccall((:SEQ_FilterPop, LibSeqArray), Void, (Cint,), file.gds.id)
 	return nothing
 end
@@ -273,16 +273,16 @@ end
 
 
 # Get a sample/variant filter
-function seqFilterGet(file::TypeSeqArray, sample::Bool=true)
+function seqFilterGet(file::TypeSeqFile, sample::Bool=true)
 	return ccall((:SEQ_GetFilter, LibSeqArray), Vector{Bool}, (Cint,Bool),
 		file.gds.id, sample)
 end
 
 # Get data
-function seqGetData(file::TypeSeqArray, name::String)
+function seqGetData(file::TypeSeqFile, name::String)
 	rv = ccall((:SEQ_GetData, LibSeqArray), Any, (Cint,Cstring),
 		file.gds.id, name)
-	if typeof(rv) == Vector{Any}
+	if isa(rv, Vector{Any})
 		rv = TypeVarData(rv[1], rv[2])
 	end
 	return rv
@@ -291,17 +291,17 @@ end
 
 
 # Apply function over array margins
-function seqApply(fun::Function, file::TypeSeqArray,
+function seqApply(fun::Function, file::TypeSeqFile,
 		name::Union{String, Vector{String}}; asis::String="none",
 		verbose::Bool=true, bsize::Int=1024, args...)
 	# check
 	if asis!="none" && asis!="unlist" && asis!="list"
-		error("'asis' should be \"none\", \"unlist\" or \"list\".")
+		throw(ArgumentError("'asis' should be \"none\", \"unlist\" or \"list\"."))
 	end
 	if bsize <= 0
-		error("'bsize' should be greater than 0.")
+		throw(ArgumentError("'bsize' should be greater than 0."))
 	end
-	if typeof(name) == String
+	if isa(name, String)
 		name = [ name ]
 	end
 	# initialize
@@ -353,16 +353,16 @@ process_count = 0
 
 
 # Apply Functions in Parallel
-function seqParallel(fun::Function, file::TypeSeqArray;
+function seqParallel(fun::Function, file::TypeSeqFile;
 		split::String="by.variant", combine::Union{String, Function}="unlist",
 		args...)
 	# check
 	if split!="by.variant" && split!="none"
-		error("'split' should be \"by.varaint\" or \"none\".");
+		throw(ArgumentError("'split' should be \"by.varaint\" or \"none\"."))
 	end
-	if typeof(combine) == String
+	if isa(combine, String)
 		if combine!="none" && combine!="unlist" && combine!="list"
-			error("'combine' should be \"none\", \"unlist\" or \"list\".")
+			throw(ArgumentError("'combine' should be \"none\", \"unlist\" or \"list\"."))
 		end
 	end
 	args = Vector{Any}([ x[2] for x in args ])
@@ -391,11 +391,11 @@ function seqParallel(fun::Function, file::TypeSeqArray;
 		end
 	end
 	# remote run
-	if typeof(combine) == String
+	if isa(combine, String)
 		rv = [ fetch(r) for r in rc ]
 		err = false
 		for i in rv
-			if typeof(i) == RemoteException
+			if isa(i, RemoteException)
 				println(i)
 				err = true
 			end
@@ -416,7 +416,7 @@ end
 
 ####  Display  ####
 
-function show(io::IO, file::TypeSeqArray; attr=false, all=false)
+function show(io::IO, file::TypeSeqFile; attr=false, all=false)
 	print_with_color(:bold, io, "SeqArray ")
 	show(io, file.gds, attr=attr, all=all)
 end
