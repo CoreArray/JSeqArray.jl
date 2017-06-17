@@ -292,8 +292,8 @@ end
 
 # Apply function over array margins
 function seqApply(fun::Function, file::TypeSeqFile,
-		name::Union{String, Vector{String}}; asis::String="none",
-		verbose::Bool=true, bsize::Int=1024, args...)
+		name::Union{String, Vector{String}}, args...; asis::String="none",
+		verbose::Bool=true, bsize::Int=1024, kwargs...)
 	# check
 	if asis!="none" && asis!="unlist" && asis!="list"
 		throw(ArgumentError("'asis' should be \"none\", \"unlist\" or \"list\"."))
@@ -309,8 +309,6 @@ function seqApply(fun::Function, file::TypeSeqFile,
 	bnum = div(dm, bsize)
 	bnum += mod(dm, bsize) != 0
 	rv = asis=="none" ? nothing : Vector{Any}(bnum)
-	# build additional parameters for the user-defined function
-	args = Vector{Any}([ x[2] for x in args ])
 	# run
 	seqFilterPush(file)
 	progress = progress_init(bnum, verbose)
@@ -326,7 +324,7 @@ function seqApply(fun::Function, file::TypeSeqFile,
 			seqFilterSet2(file, nothing, idx[st:ed], false, false)
 			st += bsize
 			x = [ seqGetData(file, nm) for nm in name ]
-			v = fun(x..., args...)
+			v = fun(x..., args...; kwargs...)
 			if rv != nothing
 				rv[i] = v
 			end
@@ -353,9 +351,9 @@ process_count = 0
 
 
 # Apply Functions in Parallel
-function seqParallel(fun::Function, file::TypeSeqFile;
+function seqParallel(fun::Function, file::TypeSeqFile, args...;
 		split::String="by.variant", combine::Union{String, Function}="unlist",
-		args...)
+		kwargs...)
 	# check
 	if split!="by.variant" && split!="none"
 		throw(ArgumentError("'split' should be \"by.varaint\" or \"none\"."))
@@ -365,7 +363,6 @@ function seqParallel(fun::Function, file::TypeSeqFile;
 			throw(ArgumentError("'combine' should be \"none\", \"unlist\" or \"list\"."))
 		end
 	end
-	args = Vector{Any}([ x[2] for x in args ])
 	# set remotecall
 	@everywhere using JSeqArray
 	ws = workers()
@@ -373,7 +370,8 @@ function seqParallel(fun::Function, file::TypeSeqFile;
 	fn = file.gds.filename
 	sel = seqFilterGet(file, false)
 	for i in 1:length(ws)
-		rc[i] = remotecall(ws[i], i, length(ws), fn, sel, fun, split, args) do i, cnt, fn, sel, fun, split, args
+		rc[i] = remotecall(ws[i], i, length(ws), fn, sel, fun, split,
+					args, kwargs) do i, cnt, fn, sel, fun, split, args, kwargs
 			process_index = i
 			process_count = cnt
 			rv = nothing
@@ -383,7 +381,7 @@ function seqParallel(fun::Function, file::TypeSeqFile;
 				seqFilterSplit(gdsfile, i, cnt, false)
 			end
 			try
-				rv = fun(gdsfile, args...)
+				rv = fun(gdsfile, args...; kwargs...)
 			finally
 				seqClose(gdsfile)
 			end
