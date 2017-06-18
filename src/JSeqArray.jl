@@ -138,7 +138,7 @@ end
 	seqExample(file)
 Returns the example SeqArray file.
 # Arguments
-* `file::Symbol`: specify which SeqArray file, it should be :kg
+* `file::Symbol`: specify which SeqArray file, it should be :kg for 1KG_phase1_release_v3_chr22.gds
 # Examples
 ```jldoctest
 julia> seqExample(:kg)
@@ -167,8 +167,7 @@ Opens a SeqArray GDS file.
 * `allow_dup::Bool=false`: if true, it is allowed to open a GDS file with read-only mode when it has been opened in the same session
 # Examples
 ```julia
-julia> fn = joinpath(Pkg.dir(), "JSeqArray", "demo", "data", "1KG_phase1_release_v3_chr22.gds")
-julia> f = seqOpen(fn)
+julia> f = seqOpen(seqExample(:kg))
 julia> f
 julia> seqClose(f)
 ```
@@ -210,13 +209,12 @@ Sets a filter to sample and/or variant.
 * `verbose::Bool=true`: if true, show information
 # Examples
 ```julia
-julia> fn = joinpath(Pkg.dir(), "JSeqArray", "demo", "data", "1KG_phase1_release_v3_chr22.gds")
-julia> f = seqOpen(fn)
+julia> f = seqOpen(seqExample(:kg))
 julia> f
 julia> seqClose(f)
 ```
 """
-function seqFilterSet(file::TypeSeqFile,
+function seqFilterSet(file::TypeSeqFile;
 		sample_id::Union{Void, Vector} = nothing,
 		variant_id::Union{Void, Vector} = nothing,
 		intersect::Bool=false, verbose::Bool=true)
@@ -228,7 +226,7 @@ function seqFilterSet(file::TypeSeqFile,
 		end
 		sampid = seqGetData(file, "sample.id")
 		sampsel = [ in(x, sampset) for x in sampid ]
-		seqFilterSet2(file, sampsel, nothing, intersect, verbose)
+		seqFilterSet2(file, sample=sampsel, intersect=intersect, verbose=verbose)
 	end
 	# set variants
 	if variant_id != nothing
@@ -238,7 +236,7 @@ function seqFilterSet(file::TypeSeqFile,
 		end
 		varid = seqGetData(file, "variant.id")
 		varsel = [ in(x, varset) for x in varid ]
-		seqFilterSet2(file, nothing, varsel, intersect, verbose)
+		seqFilterSet2(file, variant=varsel, intersect=intersect, verbose=verbose)
 	end
 	return nothing
 end
@@ -246,7 +244,7 @@ end
 
 
 # Set a filter on variants or samples using an index vector or a logical vector
-function seqFilterSet2(file::TypeSeqFile,
+function seqFilterSet2(file::TypeSeqFile;
 		sample::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing,
 		variant::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing,
 		intersect::Bool=false, verbose::Bool=true)
@@ -284,7 +282,7 @@ end
 
 
 # Set a filter on variants within a block given by the total number of blocks
-function seqFilterSplit(file::TypeSeqFile, index::Int, count::Int,
+function seqFilterSplit(file::TypeSeqFile, index::Int, count::Int;
 		verbose::Bool=true)
 	if count < 1
 		throw(ArgumentError("'count' should be > 0."))
@@ -293,14 +291,14 @@ function seqFilterSplit(file::TypeSeqFile, index::Int, count::Int,
 		throw(ArgumentError("'index' should be between 1 and $count."))
 	end
 	ss = split_count(gds_seldim(file)[3], count)
-	seqFilterSet2(file, nothing, ss[index], true, verbose)
+	seqFilterSet2(file, variant=ss[index], intersect=true, verbose=verbose)
 	return nothing
 end
 
 
 
 # Reset the filter
-function seqFilterReset(file::TypeSeqFile, sample::Bool=true,
+function seqFilterReset(file::TypeSeqFile; sample::Bool=true,
 		variant::Bool=true, verbose::Bool=true)
 	# set samples
 	if sample
@@ -382,7 +380,7 @@ function seqApply(fun::Function, file::TypeSeqFile,
 			if ed > dm
 				ed = dm
 			end
-			seqFilterSet2(file, nothing, idx[st:ed], false, false)
+			seqFilterSet2(file, variant=idx[st:ed], verbose=false)
 			st += bsize
 			x = [ seqGetData(file, nm) for nm in name ]
 			v = fun(x..., args...; kwargs...)
@@ -429,17 +427,18 @@ function seqParallel(fun::Function, file::TypeSeqFile, args...;
 	ws = workers()
 	rc = Vector{Any}(length(ws))
 	fn = file.gds.filename
-	sel = seqFilterGet(file, false)
+	ssel = seqFilterGet(file, true)
+	vsel = seqFilterGet(file, false)
 	for i in 1:length(ws)
-		rc[i] = remotecall(ws[i], i, length(ws), fn, sel, fun, split,
-					args, kwargs) do i, cnt, fn, sel, fun, split, args, kwargs
+		rc[i] = remotecall(ws[i], i, length(ws), fn, ssel, vsel, fun, split,
+					args, kwargs) do i, cnt, fn, ssel, vsel, fun, split, args, kwargs
 			process_index = i
 			process_count = cnt
 			rv = nothing
 			gdsfile = seqOpen(fn, true, true)
-			seqFilterSet2(gdsfile, nothing, sel, false, false)
+			seqFilterSet2(gdsfile, sample=ssel, variant=vsel, verbose=false)
 			if split==:byvariant
-				seqFilterSplit(gdsfile, i, cnt, false)
+				seqFilterSplit(gdsfile, i, cnt, verbose=false)
 			end
 			try
 				rv = fun(gdsfile, args...; kwargs...)
