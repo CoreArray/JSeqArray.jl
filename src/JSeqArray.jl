@@ -339,7 +339,26 @@ function seqFilterGet(file::TypeSeqFile, sample::Bool=true)
 		file.gds.id, sample)
 end
 
+
 # Get data
+"""
+	seqGetData(file, name)
+Gets data from a SeqArray GDS file.
+# Arguments
+* `file::TypeSeqFile`: a SeqArray julia object
+* `name::String`: the variable name, see the details
+# Details
+	The variable name should be "sample.id", "variant.id", "position", "chromosome", "allele", "genotype", "annotation/id", "annotation/qual", "annotation/filter", "annotation/info/VARIABLE_NAME", and/or "annotation/format/VARIABLE_NAME".
+	"#dosage" is also allowed for the dosages of reference allele (integer: 0, 1, 2 and NA for diploid genotypes).
+	"#num_allele" returns an integer vector with the numbers of distinct alleles.
+# Examples
+```julia
+julia> f = seqOpen(seqExample(:kg))
+julia> pos = seqGetData(f, "position")
+julia> geno  = seqGetData(f, "genotype")
+julia> seqClose(f)
+```
+"""
 function seqGetData(file::TypeSeqFile, name::String)
 	rv = ccall((:SEQ_GetData, LibSeqArray), Any, (Cint,Cstring),
 		file.gds.id, name)
