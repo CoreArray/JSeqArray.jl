@@ -292,11 +292,11 @@ end
 
 # Apply function over array margins
 function seqApply(fun::Function, file::TypeSeqFile,
-		name::Union{String, Vector{String}}, args...; asis::String="none",
+		name::Union{String, Vector{String}}, args...; asis::Symbol=:none,
 		verbose::Bool=true, bsize::Int=1024, kwargs...)
 	# check
-	if asis!="none" && asis!="unlist" && asis!="list"
-		throw(ArgumentError("'asis' should be \"none\", \"unlist\" or \"list\"."))
+	if asis!=:none && asis!=:unlist && asis!=:list
+		throw(ArgumentError("'asis' should be :none, :unlist or :list."))
 	end
 	if bsize <= 0
 		throw(ArgumentError("'bsize' should be greater than 0."))
@@ -308,7 +308,7 @@ function seqApply(fun::Function, file::TypeSeqFile,
 	dm = gds_seldim(file)[3]  # the number of selected variants
 	bnum = div(dm, bsize)
 	bnum += mod(dm, bsize) != 0
-	rv = asis=="none" ? nothing : Vector{Any}(bnum)
+	rv = asis==:none ? nothing : Vector{Any}(bnum)
 	# run
 	seqFilterPush(file)
 	progress = progress_init(bnum, verbose)
@@ -335,7 +335,7 @@ function seqApply(fun::Function, file::TypeSeqFile,
 		progress_done(progress)
 	end
 	# output
-	if asis == "unlist"
+	if asis == :unlist
 		rv = vcat(rv...)
 	end
 	return rv
@@ -352,15 +352,15 @@ process_count = 0
 
 # Apply Functions in Parallel
 function seqParallel(fun::Function, file::TypeSeqFile, args...;
-		split::String="by.variant", combine::Union{String, Function}="unlist",
+		split::Symbol=:byvariant, combine::Union{Symbol, Function}=:unlist,
 		kwargs...)
 	# check
-	if split!="by.variant" && split!="none"
-		throw(ArgumentError("'split' should be \"by.varaint\" or \"none\"."))
+	if split!=:byvariant && split!=:none
+		throw(ArgumentError("'split' should be :byvaraint or :none."))
 	end
-	if isa(combine, String)
-		if combine!="none" && combine!="unlist" && combine!="list"
-			throw(ArgumentError("'combine' should be \"none\", \"unlist\" or \"list\"."))
+	if isa(combine, Symbol)
+		if combine!=:none && combine!=:unlist && combine!=:list
+			throw(ArgumentError("'combine' should be :none, :unlist or :list."))
 		end
 	end
 	# set remotecall
@@ -377,7 +377,7 @@ function seqParallel(fun::Function, file::TypeSeqFile, args...;
 			rv = nothing
 			gdsfile = seqOpen(fn, true, true)
 			seqFilterSet2(gdsfile, nothing, sel, false, false)
-			if split=="by.variant"
+			if split==:byvariant
 				seqFilterSplit(gdsfile, i, cnt, false)
 			end
 			try
@@ -389,7 +389,7 @@ function seqParallel(fun::Function, file::TypeSeqFile, args...;
 		end
 	end
 	# remote run
-	if isa(combine, String)
+	if isa(combine, Symbol)
 		rv = [ fetch(r) for r in rc ]
 		err = false
 		for i in rv
@@ -401,7 +401,7 @@ function seqParallel(fun::Function, file::TypeSeqFile, args...;
 		if err
 			error("RemoteException")
 		end
-		rv = combine=="none" ? nothing : (combine=="unlist" ? vcat(rv...) : rv)
+		rv = combine==:none ? nothing : (combine==:unlist ? vcat(rv...) : rv)
 	else
 		rv = reduce(combine, map(fetch, rc))
 	end
