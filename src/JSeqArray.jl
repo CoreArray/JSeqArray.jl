@@ -352,9 +352,35 @@ end
 
 
 # Apply function over array margins
+"""
+	seqApply(fun, file, name, args...; asis, bsize, verbose, kwargs...)
+Applies the user-defined function over array margins.
+# Arguments
+* `fun::Function`: the user-defined function
+* `file::TypeSeqFile`: a SeqArray julia object
+* `name::Union{String, Vector{String}}`: the variable name(s), see the details
+* `args`: the optional arguments passed to the user-defined function
+* `asis::Symbol=:none`: :none (no return), :unlist (returns a vector which contains all the atomic components) or :list(returns a vector according to each block)
+* `bsize::Int=1024`: block size for the number of variants in a block
+* `verbose::Bool=true`: if true, show progress information
+* `kwargs`: the keyword optional arguments passed to the user-defined function
+# Details
+	The variable name should be "sample.id", "variant.id", "position", "chromosome", "allele", "genotype", "annotation/id", "annotation/qual", "annotation/filter", "annotation/info/VARIABLE_NAME", and/or "annotation/format/VARIABLE_NAME".
+	"#dosage" is also allowed for the dosages of reference allele (integer: 0, 1, 2 and NA for diploid genotypes).
+	"#num_allele" returns an integer vector with the numbers of distinct alleles.
+	The algorithm is highly optimized by blocking the computations to exploit the high-speed memory instead of disk.
+# Examples
+```julia
+julia> f = seqOpen(seqExample(:kg))
+julia> seqApply(f, "genotype", asis=:unlist) do geno
+           return sum(geno)
+       end
+julia> seqClose(f)
+```
+"""
 function seqApply(fun::Function, file::TypeSeqFile,
 		name::Union{String, Vector{String}}, args...; asis::Symbol=:none,
-		verbose::Bool=true, bsize::Int=1024, kwargs...)
+		bsize::Int=1024, verbose::Bool=true, kwargs...)
 	# check
 	if asis!=:none && asis!=:unlist && asis!=:list
 		throw(ArgumentError("'asis' should be :none, :unlist or :list."))
