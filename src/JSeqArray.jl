@@ -360,7 +360,7 @@ Applies the user-defined function over array margins.
 * `file::TypeSeqFile`: a SeqArray julia object
 * `name::Union{String, Vector{String}}`: the variable name(s), see the details
 * `args`: the optional arguments passed to the user-defined function
-* `asis::Symbol=:none`: :none (no return), :unlist (returns a vector which contains all the atomic components) or :list(returns a vector according to each block)
+* `asis::Symbol=:none`: `:none` (no return), `:unlist` (returns a vector which contains all the atomic components) or `:list` (returns a vector according to each block)
 * `bsize::Int=1024`: block size for the number of variants in a block
 * `verbose::Bool=true`: if true, show progress information
 * `kwargs`: the keyword optional arguments passed to the user-defined function
@@ -438,6 +438,19 @@ process_count = 0
 
 
 # Apply Functions in Parallel
+"""
+	seqParallel(fun, file, args...; split, combine, kwargs...)
+Applies a user-defined function in parallel.
+# Arguments
+* `fun::Function`: the user-defined function
+* `file::TypeSeqFile`: a SeqArray julia object
+* `args`: the optional arguments passed to the user-defined function
+* `split::Symbol=:byvariant`: `:none` for no split, `:byvariant` for spliting the dataset by variant according to multiple processes
+* `combine::Union{Symbol, Function}=:unlist`: `:none` (no return), `:unlist` (returns a vector which contains all the atomic components) or `:list` (returns a vector according to each process)
+* `kwargs`: the keyword optional arguments passed to the user-defined function
+# Details
+# Examples
+"""
 function seqParallel(fun::Function, file::TypeSeqFile, args...;
 		split::Symbol=:byvariant, combine::Union{Symbol, Function}=:unlist,
 		kwargs...)
