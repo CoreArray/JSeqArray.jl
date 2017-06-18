@@ -132,6 +132,6 @@ seqClose(f)
 
 ### More examples
 
-Julia tutorial with SeqArray files: [demo/tutorial.ipynb](http://nbviewer.jupyter.org/github/CoreArray/JSeqArray.jl/blob/master/demo/tutorial.ipynb)
+Julia tutorial with SeqArray files: [demo/tutorial.ipynb](demo/tutorial.ipynb)
 
 Julia tutorial with built-in parallel programming: [demo/tutorial_parallel.ipynb](demo/tutorial_parallel.ipynb)
