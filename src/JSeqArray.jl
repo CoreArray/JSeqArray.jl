@@ -26,7 +26,7 @@ import Base: joinpath, show, print_with_color, println
 import jugds: type_gdsfile, open_gds, close_gds, show
 
 export TypeSeqFile, TypeVarData,
-	seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterSplit,
+	seqExample, seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterSplit,
 	seqFilterReset, seqFilterPush, seqFilterPop, seqFilterGet, seqGetData,
 	seqApply, seqParallel
 
@@ -131,10 +131,48 @@ end
 
 
 
+####  Example GDS Files  ####
+
+# Get the directory of jugds *.h header files
+"""
+	seqExample(file)
+Returns the example SeqArray file.
+# Arguments
+* `file::Symbol`: specify which SeqArray file, it should be :kg
+# Examples
+```jldoctest
+julia> seqExample(:kg)
+```
+"""
+function seqExample(file::Symbol)
+	path = joinpath(Pkg.dir(), "JSeqArray", "demo", "data")
+	if file == :kg
+		fn = joinpath(path, "1KG_phase1_release_v3_chr22.gds")
+	else
+		throw(ArgumentError("'file' should be :kg."))
+	end
+	return fn
+end
+
+
 
 ####  GDS File  ####
 
 # Open a SeqArray file
+"""
+	seqOpen(filename, allow_dup)
+Opens a SeqArray GDS file.
+# Arguments
+* `filename::String`: the file name of a SeqArray file
+* `allow_dup::Bool=false`: if true, it is allowed to open a GDS file with read-only mode when it has been opened in the same session
+# Examples
+```julia
+julia> fn = joinpath(Pkg.dir(), "JSeqArray", "demo", "data", "1KG_phase1_release_v3_chr22.gds")
+julia> f = seqOpen(fn)
+julia> f
+julia> seqClose(f)
+```
+"""
 function seqOpen(filename::String, readonly::Bool=true, allow_dup::Bool=false)
 	ff = open_gds(filename, readonly, allow_dup)
 	# TODO: check file structure
@@ -145,6 +183,12 @@ end
 
 
 # Close the SeqArray file
+"""
+	seqClose(file)
+Closes a SeqArray GDS file which is open.
+# Arguments
+* `file::TypeSeqFile`: a SeqArray julia object
+"""
 function seqClose(file::TypeSeqFile)
 	fid = file.gds.id
 	close_gds(file.gds)
@@ -155,6 +199,23 @@ end
 
 
 # Set a filter on variants or samples with sample or variant IDs
+"""
+	seqFilterSet(file, sample_id, variant_id, intersect, verbose)
+Sets a filter to sample and/or variant.
+# Arguments
+* `file::TypeSeqFile`: a SeqArray julia object
+* `sample_id::Union{Void, Vector}=nothing`: sample ID to be selected, or nothing for no selection
+* `variant_id::Union{Void, Vector}=nothing`: variant ID to be selected, or nothing for no selection
+* `intersect::Bool=false`: if false, the candidate samples/variants for selection are all samples/variants; if true, the candidate samples/variants are from the selected samples/variants defined via the previous call
+* `verbose::Bool=true`: if true, show information
+# Examples
+```julia
+julia> fn = joinpath(Pkg.dir(), "JSeqArray", "demo", "data", "1KG_phase1_release_v3_chr22.gds")
+julia> f = seqOpen(fn)
+julia> f
+julia> seqClose(f)
+```
+"""
 function seqFilterSet(file::TypeSeqFile,
 		sample_id::Union{Void, Vector} = nothing,
 		variant_id::Union{Void, Vector} = nothing,
