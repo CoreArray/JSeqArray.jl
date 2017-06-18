@@ -76,13 +76,13 @@ end
 
 ####  Internal functions  ####
 
-# ploidy X total sample X total variant
+# (ploidy, total # of samples, total # of variants)
 function gds_dim(file::TypeSeqFile)
 	return ccall((:SEQ_GetSpace, LibSeqArray), Vector{Int64}, (Cint,),
 		file.gds.id)
 end
 
-# ploidy X selected sample X selected variant
+# (ploidy, # of selected samples, # of selected variants)
 function gds_seldim(file::TypeSeqFile)
 	return ccall((:SEQ_GetSelSpace, LibSeqArray), Vector{Int64}, (Cint,),
 		file.gds.id)
@@ -203,14 +203,16 @@ end
 Sets a filter to sample and/or variant.
 # Arguments
 * `file::TypeSeqFile`: a SeqArray julia object
-* `sample_id::Union{Void, Vector}=nothing`: sample ID to be selected, or nothing for no selection
-* `variant_id::Union{Void, Vector}=nothing`: variant ID to be selected, or nothing for no selection
+* `sample_id::Union{Void, Vector}=nothing`: sample ID to be selected, or nothing for no action
+* `variant_id::Union{Void, Vector}=nothing`: variant ID to be selected, or nothing for no action
 * `intersect::Bool=false`: if false, the candidate samples/variants for selection are all samples/variants; if true, the candidate samples/variants are from the selected samples/variants defined via the previous call
 * `verbose::Bool=true`: if true, show information
 # Examples
 ```julia
 julia> f = seqOpen(seqExample(:kg))
-julia> f
+julia> sid = seqGetData(f, "sample.id")
+julia> vid = seqGetData(f, "variant.id")
+julia> seqFilterSet(f, sample_id=sid[4:10], variant_id=vid[2:6])
 julia> seqClose(f)
 ```
 """
@@ -222,7 +224,7 @@ function seqFilterSet(file::TypeSeqFile;
 	if sample_id != nothing
 		sampset = Set(sample_id)
 		if !intersect
-			seqFilterReset(file, true, false, false)
+			seqFilterReset(file, sample=true, variant=false, verbose=false)
 		end
 		sampid = seqGetData(file, "sample.id")
 		sampsel = [ in(x, sampset) for x in sampid ]
@@ -232,7 +234,7 @@ function seqFilterSet(file::TypeSeqFile;
 	if variant_id != nothing
 		varset = Set(variant_id)
 		if !intersect
-			seqFilterReset(file, false, true, false)
+			seqFilterReset(file, sample=false, variant=true, verbose=false)
 		end
 		varid = seqGetData(file, "variant.id")
 		varsel = [ in(x, varset) for x in varid ]
