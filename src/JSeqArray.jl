@@ -141,7 +141,10 @@ Returns the example SeqArray file.
 * `file::Symbol`: specify which SeqArray file, it should be :kg for 1KG_phase1_release_v3_chr22.gds
 # Examples
 ```jldoctest
-julia> seqExample(:kg)
+julia> fn = seqExample(:kg);
+
+julia> basename(fn)
+"1KG_phase1_release_v3_chr22.gds"
 ```
 """
 function seqExample(file::Symbol)
@@ -169,7 +172,9 @@ Opens a SeqArray GDS file.
 # Examples
 ```julia
 julia> f = seqOpen(seqExample(:kg))
+
 julia> f
+
 julia> seqClose(f)
 ```
 """
@@ -407,11 +412,18 @@ The variable name should be
 * "#dosage" for a dosage matrix (sample, variant) of reference allele (UInt8: 0, 1 and 2 for diploid genotypes, 0xFF for missing values)
 * "#num_allele" returns an integer vector with the numbers of distinct alleles
 # Examples
-```julia
-julia> f = seqOpen(seqExample(:kg))
-julia> pos = seqGetData(f, "position")
-julia> geno = seqGetData(f, "genotype")
-julia> dosage = seqGetData(f, "#dosage")
+```jldoctest
+julia> f = seqOpen(seqExample(:kg));
+
+julia> pos = seqGetData(f, "position"); println(typeof(pos), ", ", length(pos))
+Array{Int32,1}, 19773
+
+julia> geno = seqGetData(f, "genotype"); println(typeof(geno), ", ", size(geno))
+Array{UInt8,3}, (2,1092,19773)
+
+julia> dosage = seqGetData(f, "#dosage"); println(typeof(dosage), ", ", size(dosage))
+Array{UInt8,2}, (1092,19773)
+
 julia> seqClose(f)
 ```
 """

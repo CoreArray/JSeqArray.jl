@@ -1,11 +1,16 @@
 # JSeqArray.jl Documentation
 
+```@contents
+```
+
+```@meta
+DocTestSetup = quote
+	using JSeqArray
+end
+```
+
 
 ## Functions
-
-```@docs
-seqOpen(filename::String, readonly::Bool=true, allow_dup::Bool=false)
-```
 
 ```@docs
 seqOpen(filename::String, readonly::Bool=true, allow_dup::Bool=false)
