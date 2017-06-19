@@ -76,13 +76,13 @@ end
 
 ####  Internal functions  ####
 
-# (ploidy, total # of samples, total # of variants)
+# return (ploidy, total # of samples, total # of variants)
 function gds_dim(file::TypeSeqFile)
 	return ccall((:SEQ_GetSpace, LibSeqArray), Vector{Int64}, (Cint,),
 		file.gds.id)
 end
 
-# (ploidy, # of selected samples, # of selected variants)
+# return (ploidy, # of selected samples, # of selected variants)
 function gds_seldim(file::TypeSeqFile)
 	return ccall((:SEQ_GetSelSpace, LibSeqArray), Vector{Int64}, (Cint,),
 		file.gds.id)
@@ -160,10 +160,11 @@ end
 
 # Open a SeqArray file
 """
-	seqOpen(filename, allow_dup)
+	seqOpen(filename, readonly, allow_dup)
 Opens a SeqArray GDS file.
 # Arguments
 * `filename::String`: the file name of a SeqArray file
+* `readonly::Bool=true`: if true, the file is opened read-only; otherwise, it is allowed to write data to the file
 * `allow_dup::Bool=false`: if true, it is allowed to open a GDS file with read-only mode when it has been opened in the same session
 # Examples
 ```julia
@@ -199,7 +200,7 @@ end
 
 # Set a filter on variants or samples with sample or variant IDs
 """
-	seqFilterSet(file, sample_id, variant_id, intersect, verbose)
+	seqFilterSet(file; sample_id, variant_id, intersect, verbose)
 Sets a filter to sample and/or variant.
 # Arguments
 * `file::TypeSeqFile`: a SeqArray julia object
@@ -246,6 +247,16 @@ end
 
 
 # Set a filter on variants or samples using an index vector or a logical vector
+"""
+	seqFilterSet2(file; sample, variant, intersect, verbose)
+Sets a filter to sample and/or variant.
+# Arguments
+* `file::TypeSeqFile`: a SeqArray julia object
+* `sample::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing`: sample(s) to be selected, or nothing for no action
+* `variant::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing`: variant(s) to be selected, or nothing for no action
+* `intersect::Bool=false`: if false, the candidate samples/variants for selection are all samples/variants; if true, the candidate samples/variants are from the selected samples/variants defined via the previous call
+* `verbose::Bool=true`: if true, show information
+"""
 function seqFilterSet2(file::TypeSeqFile;
 		sample::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing,
 		variant::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing,
@@ -284,6 +295,17 @@ end
 
 
 # Set a filter on variants within a block given by the total number of blocks
+"""
+	seqFilterSplit(file, index, count; verbose)
+Splits the variants into multiple parts equally and selects the specified part.
+# Arguments
+* `file::TypeSeqFile`: a SeqArray julia object
+* `index::Int`: selects the `index`th part (starting from 1)
+* `index::Int`: the total number of non-overlapping parts
+* `verbose::Bool=true`: if true, show information
+# Details
+Users can define a subset of variants before calling `seqFilterSplit()` and split the selection of variants into multiple parts.
+"""
 function seqFilterSplit(file::TypeSeqFile, index::Int, count::Int;
 		verbose::Bool=true)
 	if count < 1
@@ -300,6 +322,15 @@ end
 
 
 # Reset the filter
+"""
+	seqFilterReset(file; sample, variant, verbose)
+Resets the sample and variant filters.
+# Arguments
+* `file::TypeSeqFile`: a SeqArray julia object
+* `sample::Bool=true`: if true, resets the sample filter
+* `variant::Bool=true`: if true, resets the variant filter
+* `verbose::Bool=true`: if true, show information
+"""
 function seqFilterReset(file::TypeSeqFile; sample::Bool=true,
 		variant::Bool=true, verbose::Bool=true)
 	# set samples
@@ -542,7 +573,7 @@ function seqParallel(fun::Function, file::TypeSeqFile, args...;
 		err = false
 		for i in rv
 			if isa(i, RemoteException)
-				println(i)
+				show(i)
 				err = true
 			end
 		end
