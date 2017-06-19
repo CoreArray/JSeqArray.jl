@@ -42,12 +42,6 @@ Dr. Xiuwen Zheng ([zhengxwen@gmail.com](zhengxwen@gmail.com))
 JSeqArray.jl documentation: [docs/index.md](docs/index.md)
 
 
-
-## Tutorials
-
-* Learn X in Y minutes (where X=Julia): [http://learnxinyminutes.com/docs/julia/](http://learnxinyminutes.com/docs/julia/)
-
-
 ## Citation
 
 #### Original paper (implemented in an [R/Bioconductor](http://bioconductor.org/packages/SeqArray) package):
@@ -141,3 +135,7 @@ seqClose(f)
 Julia tutorial with SeqArray files: [demo/tutorial.ipynb](demo/tutorial.ipynb)
 
 Julia tutorial with built-in parallel programming: [demo/tutorial_parallel.ipynb](demo/tutorial_parallel.ipynb)
+
+JSeqArray.jl documentation: [docs/index.md](docs/index.md)
+
+Learn X in Y minutes (where X=Julia): [http://learnxinyminutes.com/docs/julia/](http://learnxinyminutes.com/docs/julia/)
