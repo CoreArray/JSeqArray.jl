@@ -605,7 +605,17 @@ end
 
 ####  Display  ####
 
-function show(io::IO, file::TypeSeqFile; attr=false, all=false)
+# Apply Functions in Parallel
+"""
+	show(io, file; attr, all)
+Applies a user-defined function in parallel.
+# Arguments
+* `io::`: I/O stream
+* `file::TypeSeqFile`: a SeqArray julia object
+* `attr::Bool=false`: if true, shows all attributes
+* `all::Bool=false`: if true, show all GDS nodes including hidden nodes
+"""
+function show(io::IO, file::TypeSeqFile; attr::Bool=false, all::Bool=false)
 	print_with_color(:bold, io, "SeqArray ")
 	show(io, file.gds, attr=attr, all=all)
 end

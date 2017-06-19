@@ -37,6 +37,12 @@ Pkg.build("JSeqArray")
 Dr. Xiuwen Zheng ([zhengxwen@gmail.com](zhengxwen@gmail.com))
 
 
+## Documentation
+
+JSeqArray.jl documentation [docs/src/index.md](docs/src/index.md)
+
+
+
 ## Tutorials
 
 * Learn X in Y minutes (where X=Julia): [http://learnxinyminutes.com/docs/julia/](http://learnxinyminutes.com/docs/julia/)
