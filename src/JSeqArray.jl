@@ -318,6 +318,13 @@ end
 
 
 # Push a filter
+"""
+	seqFilterPush(file, reset)
+Pushes the sample and variant filters to the stack for future uses.
+# Arguments
+* `file::TypeSeqFile`: a SeqArray julia object
+* `reset::Bool=false`: if true, reset the sample and variant filters
+"""
 function seqFilterPush(file::TypeSeqFile, reset::Bool=false)
 	ccall((:SEQ_FilterPush, LibSeqArray), Void, (Cint,Bool), file.gds.id, reset)
 	return nothing
@@ -326,6 +333,12 @@ end
 
 
 # Pop a filter
+"""
+	seqFilterPop(file)
+Uses the last sample and variant filters saved in the stack, and removes them from the stack.
+# Arguments
+* `file::TypeSeqFile`: a SeqArray julia object
+"""
 function seqFilterPop(file::TypeSeqFile)
 	ccall((:SEQ_FilterPop, LibSeqArray), Void, (Cint,), file.gds.id)
 	return nothing
@@ -334,10 +347,18 @@ end
 
 
 # Get a sample/variant filter
+"""
+	seqFilterGet(file, sample)
+Gets the filter of samples and variants.
+# Arguments
+* `file::TypeSeqFile`: a SeqArray julia object
+* `sample::Bool=true`: if true, returns a logical vector for the sample filter; otherwise, returns a logical vector for the variant filter
+"""
 function seqFilterGet(file::TypeSeqFile, sample::Bool=true)
 	return ccall((:SEQ_GetFilter, LibSeqArray), Vector{Bool}, (Cint,Bool),
 		file.gds.id, sample)
 end
+
 
 
 # Get data
