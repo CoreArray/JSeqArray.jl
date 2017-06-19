@@ -39,7 +39,7 @@ Dr. Xiuwen Zheng ([zhengxwen@gmail.com](zhengxwen@gmail.com))
 
 ## Documentation
 
-JSeqArray.jl documentation [docs/src/index.md](docs/src/index.md)
+JSeqArray.jl documentation: [docs/index.md](docs/index.md)
 
 
 
