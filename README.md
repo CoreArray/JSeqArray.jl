@@ -134,7 +134,7 @@ seqClose(f)
 
 Julia tutorial with SeqArray files: [demo/tutorial.ipynb](demo/tutorial.ipynb)
 
-Julia tutorial with built-in parallel programming: [demo/tutorial_parallel.ipynb](demo/tutorial_parallel.ipynb)
+Julia tutorial with SeqArray files and parallel programming: [demo/tutorial_parallel.ipynb](demo/tutorial_parallel.ipynb)
 
 JSeqArray.jl documentation: [docs/index.md](docs/index.md)
 
