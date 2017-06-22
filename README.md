@@ -128,6 +128,18 @@ seqClose(f)
  0x00  0x00  0x00  0x00  0x00     0x00  0x00  0x00  0x01  0x00
 ```
 
+
+### Key Functions
+
+| Function     | Description |
+|:-------------|:-------------------------------------------|
+| seqFilterSet | Define a data subset of samples or variants. [»](https://github.com/CoreArray/JSeqArray.jl/blob/master/docs/index.md#JSeqArray.seqFilterSet-Tuple{JSeqArray.TypeSeqFile}) |
+| seqGetData   | Get data from a SeqArray file with a defined filter. [»](https://github.com/CoreArray/JSeqArray.jl/blob/master/docs/index.md#JSeqArray.seqGetData-Tuple{JSeqArray.TypeSeqFile,String}) |
+| seqApply     | Apply a user-defined function over array margins. [»](https://github.com/CoreArray/JSeqArray.jl/blob/master/docs/index.md#JSeqArray.seqApply-Tuple{Function,JSeqArray.TypeSeqFile,Union{Array{String,1},String},Vararg{Any,N}}) |
+| seqParallel  | Apply functions in parallel. [»](https://github.com/CoreArray/JSeqArray.jl/blob/master/docs/index.md#JSeqArray.seqParallel-Tuple{Function,JSeqArray.TypeSeqFile,Vararg{Any,N}}) |
+| ...  | [»](https://github.com/CoreArray/JSeqArray.jl/blob/master/docs/index.md) |
+
+
 ### More examples
 
 Julia tutorial with SeqArray files: [demo/tutorial.ipynb](demo/tutorial.ipynb)
