@@ -432,6 +432,53 @@ JL_DLLEXPORT jl_array_t* SEQ_GetFilter(int file_id, C_BOOL sample)
 
 // ================================================================
 
+/// get the total number of samples
+JL_DLLEXPORT C_Int64 SEQ_Attr_NSamp(int file_id)
+{
+	COREARRAY_TRY
+		CFileInfo &File = GetFileInfo(file_id);
+		return File.SampleNum();
+	COREARRAY_CATCH_RET
+}
+
+/// get the number of selected samples
+JL_DLLEXPORT C_Int64 SEQ_Attr_NSelSamp(int file_id)
+{
+	COREARRAY_TRY
+		CFileInfo &File = GetFileInfo(file_id);
+		return File.SampleSelNum();
+	COREARRAY_CATCH_RET
+}
+
+/// get the total number of variants
+JL_DLLEXPORT C_Int64 SEQ_Attr_NVar(int file_id)
+{
+	COREARRAY_TRY
+		CFileInfo &File = GetFileInfo(file_id);
+		return File.VariantNum();
+	COREARRAY_CATCH_RET
+}
+
+/// get the number of selected variants
+JL_DLLEXPORT C_Int64 SEQ_Attr_NSelVar(int file_id)
+{
+	COREARRAY_TRY
+		CFileInfo &File = GetFileInfo(file_id);
+		return File.VariantSelNum();
+	COREARRAY_CATCH_RET
+}
+
+/// get the number of selected variants
+JL_DLLEXPORT int SEQ_Attr_Ploidy(int file_id)
+{
+	COREARRAY_TRY
+		CFileInfo &File = GetFileInfo(file_id);
+		return File.Ploidy();
+	COREARRAY_CATCH_RET
+}
+
+
+
 /// get the dimensions of the whole space
 JL_DLLEXPORT jl_array_t *SEQ_GetSpace(int file_id)
 {

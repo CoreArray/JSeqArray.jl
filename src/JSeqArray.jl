@@ -28,7 +28,7 @@ import jugds: type_gdsfile, open_gds, close_gds, show
 export TypeSeqFile, TypeVarData,
 	seqExample, seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterSplit,
 	seqFilterReset, seqFilterPush, seqFilterPop, seqFilterGet, seqGetData,
-	seqApply, seqParallel
+	seqApply, seqParallel, seqAttr
 
 
 
@@ -598,6 +598,35 @@ function seqParallel(fun::Function, file::TypeSeqFile, args...;
 	end
 	# output
 	return rv
+end
+
+
+
+####  Summary  ####
+
+# Return the specified attribute value
+"""
+    seqAttr(file, name)
+Applies a user-defined function in parallel.
+# Arguments
+* `file::TypeSeqFile`: a SeqArray julia object
+* `name::Symbol`: the symbol name for the specified attribute
+"""
+function seqAttr(file::TypeSeqFile, name::Symbol)
+	if name == :nsamp
+		return ccall((:SEQ_Attr_NSamp, LibSeqArray), Int64, (Cint,), file.gds.id)
+	elseif name == :nselsamp
+		return ccall((:SEQ_Attr_NSelSamp, LibSeqArray), Int64, (Cint,), file.gds.id)
+	elseif name == :nvar
+		return ccall((:SEQ_Attr_NVar, LibSeqArray), Int64, (Cint,), file.gds.id)
+	elseif name == :nselvar
+		return ccall((:SEQ_Attr_NSelVar, LibSeqArray), Int64, (Cint,), file.gds.id)
+	elseif name == :ploidy
+		return ccall((:SEQ_Attr_Ploidy, LibSeqArray), Cint, (Cint,), file.gds.id)
+	else
+		sym = [ :nsamp, :nselsamp, :nvar, :nselvar, :ploidy ]
+		throw(ArgumentError("'name' should be one of $sym."))
+	end
 end
 
 
