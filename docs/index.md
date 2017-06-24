@@ -69,18 +69,24 @@ Sets a filter to sample and/or variant.
 **Arguments**
 
   * `file::TypeSeqFile`: a SeqArray julia object
-  * `sample_id::Union{Void, Vector}=nothing`: sample ID to be selected, or nothing for no action
-  * `variant_id::Union{Void, Vector}=nothing`: variant ID to be selected, or nothing for no action
+  * `sample_id::Union{Void, Vector}=nothing`: sample ID to be selected, or `nothing` for no action
+  * `variant_id::Union{Void, Vector}=nothing`: variant ID to be selected, or `nothing` for no action
   * `intersect::Bool=false`: if false, the candidate samples/variants for selection are all samples/variants; if true, the candidate samples/variants are from the selected samples/variants defined via the previous call
   * `verbose::Bool=true`: if true, show information
 
 **Examples**
 
-```julia
-julia> f = seqOpen(seqExample(:kg))
-julia> sid = seqGetData(f, "sample.id")
-julia> vid = seqGetData(f, "variant.id")
+```julia-repl
+julia> f = seqOpen(seqExample(:kg));
+
+julia> sid = seqGetData(f, "sample.id");
+
+julia> vid = seqGetData(f, "variant.id");
+
 julia> seqFilterSet(f, sample_id=sid[4:10], variant_id=vid[2:6])
+Number of selected samples: 7
+Number of selected variants: 5
+
 julia> seqClose(f)
 ```
 
@@ -98,8 +104,8 @@ Sets a filter to sample and/or variant.
 **Arguments**
 
   * `file::TypeSeqFile`: a SeqArray julia object
-  * `sample::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing`: sample(s) to be selected, or nothing for no action
-  * `variant::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing`: variant(s) to be selected, or nothing for no action
+  * `sample::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing`: sample(s) to be selected, or `nothing` for no action
+  * `variant::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing`: variant(s) to be selected, or `nothing` for no action
   * `intersect::Bool=false`: if false, the candidate samples/variants for selection are all samples/variants; if true, the candidate samples/variants are from the selected samples/variants defined via the previous call
   * `verbose::Bool=true`: if true, show information
 
@@ -124,6 +130,17 @@ Splits the variants into multiple parts equally and selects the specified part.
 **Details**
 
 Users can define a subset of variants before calling `seqFilterSplit()` and split the selection of variants into multiple parts.
+
+**Examples**
+
+```julia-repl
+julia> f = seqOpen(seqExample(:kg));
+
+julia> seqFilterSplit(f, 2, 5)
+Number of selected variants: 3,954
+
+julia> seqClose(f)
+```
 
 <a id='JSeqArray.seqFilterReset-Tuple{JSeqArray.TypeSeqFile}' href='#JSeqArray.seqFilterReset-Tuple{JSeqArray.TypeSeqFile}'>#</a>
 **`JSeqArray.seqFilterReset`** &mdash; *Method*.
@@ -300,6 +317,59 @@ Applies a user-defined function in parallel.
 **Details**
 
 **Examples**
+
+<a id='JSeqArray.seqAttr-Tuple{JSeqArray.TypeSeqFile,Symbol}' href='#JSeqArray.seqAttr-Tuple{JSeqArray.TypeSeqFile,Symbol}'>#</a>
+**`JSeqArray.seqAttr`** &mdash; *Method*.
+
+
+
+```
+seqAttr(file, name)
+```
+
+Applies a user-defined function in parallel.
+
+**Arguments**
+
+  * `file::TypeSeqFile`: a SeqArray julia object
+  * `name::Symbol`: the symbol name for a specified attribute
+
+**Details**
+
+`name::Symbol =`
+
+  * `:nsampe` - the total number of samples
+  * `:nselsamp` - the number of selected samples
+  * `:nvar` - the total number of variants
+  * `:nselvar` - the number of selected variants
+  * `:ploidy` - the number of sets of chromosomes
+
+**Examples**
+
+```julia-repl
+julia> f = seqOpen(seqExample(:kg));
+
+julia> seqFilterSet2(f, sample=5:10, variant=31:40)
+Number of selected samples: 6
+Number of selected variants: 10
+
+julia> seqAttr(f, :nsamp)
+1092
+
+julia> seqAttr(f, :nselsamp)
+6
+
+julia> seqAttr(f, :nvar)
+19773
+
+julia> seqAttr(f, :nselvar)
+10
+
+julia> seqAttr(f, :ploidy)
+2
+
+julia> seqClose(f)
+```
 
 <a id='JSeqArray.seqExample-Tuple{Symbol}' href='#JSeqArray.seqExample-Tuple{Symbol}'>#</a>
 **`JSeqArray.seqExample`** &mdash; *Method*.

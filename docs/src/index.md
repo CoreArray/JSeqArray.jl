@@ -61,6 +61,10 @@ seqParallel(fun::Function, file::TypeSeqFile, args...; split::Symbol=:byvariant,
 ```
 
 ```@docs
+seqAttr(file::TypeSeqFile, name::Symbol)
+```
+
+```@docs
 seqExample(file::Symbol)
 ```
 

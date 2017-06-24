@@ -174,7 +174,7 @@ JL_DLLEXPORT void SEQ_SetSample(int file_id,  jl_array_t *samp_sel,
 
 		int n = File.SampleSelNum();
 		if (verbose)
-			jl_printf(JL_STDOUT, "# of selected samples: %s\n", PrettyInt(n));
+			jl_printf(JL_STDOUT, "Number of selected samples: %s\n", PrettyInt(n));
 
 	COREARRAY_CATCH
 }
@@ -221,7 +221,7 @@ JL_DLLEXPORT void SEQ_SetVariant(int file_id,  jl_array_t *var_sel,
 
 		int n = File.VariantSelNum();
 		if (verbose)
-			jl_printf(JL_STDOUT, "# of selected variants: %s\n", PrettyInt(n));
+			jl_printf(JL_STDOUT, "Number of selected variants: %s\n", PrettyInt(n));
 
 	COREARRAY_CATCH
 }
