@@ -538,8 +538,16 @@ end
 ####  Parallel functions  ####
 
 # internal variables used for identifying processes
-process_index = 0
-process_count = 0
+process_index = 1
+process_count = 1
+
+function set_proc_index(idx::Int)
+	global process_index = idx
+end
+
+function set_proc_count(cnt::Int)
+	global process_count = cnt
+end
 
 
 # Apply Functions in Parallel
@@ -578,18 +586,18 @@ function seqParallel(fun::Function, file::TypeSeqFile, args...;
 	for i in 1:length(ws)
 		rc[i] = remotecall(ws[i], i, length(ws), fn, ssel, vsel, fun, split,
 					args, kwargs) do i, cnt, fn, ssel, vsel, fun, split, args, kwargs
-			process_index = i
-			process_count = cnt
+			set_proc_index(i)
+			set_proc_count(cnt)
 			rv = nothing
-			gdsfile = seqOpen(fn, true, true)
-			seqFilterSet2(gdsfile, sample=ssel, variant=vsel, verbose=false)
+			ff = seqOpen(fn, true, true)
+			seqFilterSet2(ff, sample=ssel, variant=vsel, verbose=false)
 			if split==:byvariant
-				seqFilterSplit(gdsfile, i, cnt, verbose=false)
+				seqFilterSplit(ff, i, cnt, verbose=false)
 			end
 			try
-				rv = fun(gdsfile, args...; kwargs...)
+				rv = fun(ff, args...; kwargs...)
 			finally
-				seqClose(gdsfile)
+				seqClose(ff)
 			end
 			return rv
 		end
