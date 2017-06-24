@@ -25,7 +25,7 @@ using jugds
 import Base: joinpath, show, print_with_color, println
 import jugds: type_gdsfile, open_gds, close_gds, show
 
-export TypeSeqFile, TypeVarData,
+export TSeqGDSFile, TVarData,
 	seqExample, seqOpen, seqClose, seqFilterSet, seqFilterSet2, seqFilterSplit,
 	seqFilterReset, seqFilterPush, seqFilterPop, seqFilterGet, seqGetData,
 	seqApply, seqParallel, seqAttr
@@ -61,13 +61,13 @@ end
 ####  Type of GDS File and Node	 ####
 
 # Type for a SeqArray file
-type TypeSeqFile <: anygdsfile
+type TSeqGDSFile <: anygdsfile
 	gds::type_gdsfile
 	auxiliary::Any
 end
 
-# Type for variable-length data
-immutable TypeVarData
+# Type for variable-length data in SeqArray
+immutable TVarData
 	index::Vector{Int32}
 	data::Any
 end
@@ -77,13 +77,13 @@ end
 ####  Internal functions  ####
 
 # return (ploidy, total # of samples, total # of variants)
-function gds_dim(file::TypeSeqFile)
+function gds_dim(file::TSeqGDSFile)
 	return ccall((:SEQ_GetSpace, LibSeqArray), Vector{Int64}, (Cint,),
 		file.gds.id)
 end
 
 # return (ploidy, # of selected samples, # of selected variants)
-function gds_seldim(file::TypeSeqFile)
+function gds_seldim(file::TSeqGDSFile)
 	return ccall((:SEQ_GetSelSpace, LibSeqArray), Vector{Int64}, (Cint,),
 		file.gds.id)
 end
@@ -182,7 +182,7 @@ function seqOpen(filename::String, readonly::Bool=true, allow_dup::Bool=false)
 	ff = open_gds(filename, readonly, allow_dup)
 	# TODO: check file structure
 	ccall((:SEQ_File_Init, LibSeqArray), Void, (Cint,), ff.id)
-	return TypeSeqFile(ff, nothing)
+	return TSeqGDSFile(ff, nothing)
 end
 
 
@@ -192,9 +192,9 @@ end
 	seqClose(file)
 Closes a SeqArray GDS file which is open.
 # Arguments
-* `file::TypeSeqFile`: a SeqArray julia object
+* `file::TSeqGDSFile`: a SeqArray julia object
 """
-function seqClose(file::TypeSeqFile)
+function seqClose(file::TSeqGDSFile)
 	fid = file.gds.id
 	close_gds(file.gds)
 	ccall((:SEQ_File_Done, LibSeqArray), Void, (Cint,), fid)
@@ -208,7 +208,7 @@ end
 	seqFilterSet(file; sample_id, variant_id, intersect, verbose)
 Sets a filter to sample and/or variant.
 # Arguments
-* `file::TypeSeqFile`: a SeqArray julia object
+* `file::TSeqGDSFile`: a SeqArray julia object
 * `sample_id::Union{Void, Vector}=nothing`: sample ID to be selected, or `nothing` for no action
 * `variant_id::Union{Void, Vector}=nothing`: variant ID to be selected, or `nothing` for no action
 * `intersect::Bool=false`: if false, the candidate samples/variants for selection are all samples/variants; if true, the candidate samples/variants are from the selected samples/variants defined via the previous call
@@ -228,7 +228,7 @@ Number of selected variants: 5
 julia> seqClose(f)
 ```
 """
-function seqFilterSet(file::TypeSeqFile;
+function seqFilterSet(file::TSeqGDSFile;
 		sample_id::Union{Void, Vector} = nothing,
 		variant_id::Union{Void, Vector} = nothing,
 		intersect::Bool=false, verbose::Bool=true)
@@ -262,13 +262,13 @@ end
 	seqFilterSet2(file; sample, variant, intersect, verbose)
 Sets a filter to sample and/or variant.
 # Arguments
-* `file::TypeSeqFile`: a SeqArray julia object
+* `file::TSeqGDSFile`: a SeqArray julia object
 * `sample::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing`: sample(s) to be selected, or `nothing` for no action
 * `variant::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing`: variant(s) to be selected, or `nothing` for no action
 * `intersect::Bool=false`: if false, the candidate samples/variants for selection are all samples/variants; if true, the candidate samples/variants are from the selected samples/variants defined via the previous call
 * `verbose::Bool=true`: if true, show information
 """
-function seqFilterSet2(file::TypeSeqFile;
+function seqFilterSet2(file::TSeqGDSFile;
 		sample::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing,
 		variant::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing,
 		intersect::Bool=false, verbose::Bool=true)
@@ -310,7 +310,7 @@ end
 	seqFilterSplit(file, index, count; verbose)
 Splits the variants into multiple parts equally and selects the specified part.
 # Arguments
-* `file::TypeSeqFile`: a SeqArray julia object
+* `file::TSeqGDSFile`: a SeqArray julia object
 * `index::Int`: selects the `index`th part (starting from 1)
 * `index::Int`: the total number of non-overlapping parts
 * `verbose::Bool=true`: if true, show information
@@ -326,7 +326,7 @@ Number of selected variants: 3,954
 julia> seqClose(f)
 ```
 """
-function seqFilterSplit(file::TypeSeqFile, index::Int, count::Int;
+function seqFilterSplit(file::TSeqGDSFile, index::Int, count::Int;
 		verbose::Bool=true)
 	if count < 1
 		throw(ArgumentError("'count' should be > 0."))
@@ -346,12 +346,12 @@ end
 	seqFilterReset(file; sample, variant, verbose)
 Resets the sample and variant filters.
 # Arguments
-* `file::TypeSeqFile`: a SeqArray julia object
+* `file::TSeqGDSFile`: a SeqArray julia object
 * `sample::Bool=true`: if true, resets the sample filter
 * `variant::Bool=true`: if true, resets the variant filter
 * `verbose::Bool=true`: if true, show information
 """
-function seqFilterReset(file::TypeSeqFile; sample::Bool=true,
+function seqFilterReset(file::TSeqGDSFile; sample::Bool=true,
 		variant::Bool=true, verbose::Bool=true)
 	# set samples
 	if sample
@@ -373,10 +373,10 @@ end
 	seqFilterPush(file, reset)
 Pushes the sample and variant filters to the stack for future uses.
 # Arguments
-* `file::TypeSeqFile`: a SeqArray julia object
+* `file::TSeqGDSFile`: a SeqArray julia object
 * `reset::Bool=false`: if true, reset the sample and variant filters
 """
-function seqFilterPush(file::TypeSeqFile, reset::Bool=false)
+function seqFilterPush(file::TSeqGDSFile, reset::Bool=false)
 	ccall((:SEQ_FilterPush, LibSeqArray), Void, (Cint,Bool), file.gds.id, reset)
 	return nothing
 end
@@ -388,9 +388,9 @@ end
 	seqFilterPop(file)
 Uses the last sample and variant filters saved in the stack, and removes them from the stack.
 # Arguments
-* `file::TypeSeqFile`: a SeqArray julia object
+* `file::TSeqGDSFile`: a SeqArray julia object
 """
-function seqFilterPop(file::TypeSeqFile)
+function seqFilterPop(file::TSeqGDSFile)
 	ccall((:SEQ_FilterPop, LibSeqArray), Void, (Cint,), file.gds.id)
 	return nothing
 end
@@ -402,10 +402,10 @@ end
 	seqFilterGet(file, sample)
 Gets the filter of samples and variants.
 # Arguments
-* `file::TypeSeqFile`: a SeqArray julia object
+* `file::TSeqGDSFile`: a SeqArray julia object
 * `sample::Bool=true`: if true, returns a logical vector for the sample filter; otherwise, returns a logical vector for the variant filter
 """
-function seqFilterGet(file::TypeSeqFile, sample::Bool=true)
+function seqFilterGet(file::TSeqGDSFile, sample::Bool=true)
 	return ccall((:SEQ_GetFilter, LibSeqArray), Vector{Bool}, (Cint,Bool),
 		file.gds.id, sample)
 end
@@ -417,7 +417,7 @@ end
 	seqGetData(file, name)
 Gets data from a SeqArray GDS file.
 # Arguments
-* `file::TypeSeqFile`: a SeqArray julia object
+* `file::TSeqGDSFile`: a SeqArray julia object
 * `name::String`: the variable name, see the details
 # Details
 The variable name should be
@@ -442,11 +442,11 @@ Array{UInt8,2}, (1092,19773)
 julia> seqClose(f)
 ```
 """
-function seqGetData(file::TypeSeqFile, name::String)
+function seqGetData(file::TSeqGDSFile, name::String)
 	rv = ccall((:SEQ_GetData, LibSeqArray), Any, (Cint,Cstring),
 		file.gds.id, name)
 	if isa(rv, Vector{Any})
-		rv = TypeVarData(rv[1], rv[2])
+		rv = TVarData(rv[1], rv[2])
 	end
 	return rv
 end
@@ -459,7 +459,7 @@ end
 Applies the user-defined function over array margins.
 # Arguments
 * `fun::Function`: the user-defined function
-* `file::TypeSeqFile`: a SeqArray julia object
+* `file::TSeqGDSFile`: a SeqArray julia object
 * `name::Union{String, Vector{String}}`: the variable name(s), see the details
 * `args`: the optional arguments passed to the user-defined function
 * `asis::Symbol=:none`: `:none` (no return), `:unlist` (returns a vector which contains all the atomic components) or `:list` (returns a vector according to each block)
@@ -483,7 +483,7 @@ julia> seqApply(f, "genotype", asis=:unlist) do geno
 julia> seqClose(f)
 ```
 """
-function seqApply(fun::Function, file::TypeSeqFile,
+function seqApply(fun::Function, file::TSeqGDSFile,
 		name::Union{String, Vector{String}}, args...; asis::Symbol=:none,
 		bsize::Int=1024, verbose::Bool=true, kwargs...)
 	# check
@@ -556,7 +556,7 @@ end
 Applies a user-defined function in parallel.
 # Arguments
 * `fun::Function`: the user-defined function
-* `file::TypeSeqFile`: a SeqArray julia object
+* `file::TSeqGDSFile`: a SeqArray julia object
 * `args`: the optional arguments passed to the user-defined function
 * `split::Symbol=:byvariant`: `:none` for no split, `:byvariant` for spliting the dataset by variant according to multiple processes
 * `combine::Union{Symbol, Function}=:unlist`: `:none` (no return), `:unlist` (returns a vector which contains all the atomic components) or `:list` (returns a vector according to each process)
@@ -564,7 +564,7 @@ Applies a user-defined function in parallel.
 # Details
 # Examples
 """
-function seqParallel(fun::Function, file::TypeSeqFile, args...;
+function seqParallel(fun::Function, file::TSeqGDSFile, args...;
 		split::Symbol=:byvariant, combine::Union{Symbol, Function}=:unlist,
 		kwargs...)
 	# check
@@ -632,7 +632,7 @@ end
     seqAttr(file, name)
 Applies a user-defined function in parallel.
 # Arguments
-* `file::TypeSeqFile`: a SeqArray julia object
+* `file::TSeqGDSFile`: a SeqArray julia object
 * `name::Symbol`: the symbol name for a specified attribute
 # Details
 `name::Symbol = `
@@ -667,7 +667,7 @@ julia> seqAttr(f, :ploidy)
 julia> seqClose(f)
 ```
 """
-function seqAttr(file::TypeSeqFile, name::Symbol)
+function seqAttr(file::TSeqGDSFile, name::Symbol)
 	if name == :nsamp
 		return ccall((:SEQ_Attr_NSamp, LibSeqArray), Int64, (Cint,), file.gds.id)
 	elseif name == :nselsamp
@@ -695,11 +695,11 @@ end
 Applies a user-defined function in parallel.
 # Arguments
 * `io::`: I/O stream
-* `file::TypeSeqFile`: a SeqArray julia object
+* `file::TSeqGDSFile`: a SeqArray julia object
 * `attr::Bool=false`: if true, shows all attributes
 * `all::Bool=false`: if true, show all GDS nodes including hidden nodes
 """
-function show(io::IO, file::TypeSeqFile; attr::Bool=false, all::Bool=false)
+function show(io::IO, file::TSeqGDSFile; attr::Bool=false, all::Bool=false)
 	print_with_color(:bold, io, "SeqArray ")
 	show(io, file.gds, attr=attr, all=all)
 end
