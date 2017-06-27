@@ -1,4 +1,12 @@
 using Base.Test
+using JSeqArray
 
-# write your own tests here
-@test 1 == 1
+tests = [ "misc" ]
+
+for t in tests
+    fn = joinpath(dirname(@__FILE__), "test_$t.jl")
+    println("test/test_$t.jl ...")
+    include(fn)
+end
+
+
