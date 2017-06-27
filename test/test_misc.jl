@@ -26,10 +26,10 @@ try
 	af_mean = mean(af)
 	af_median = median(af)
 
-	@test af_min == 0.0
-	@test af_max == 1.0
-	@test af_mean == 0.9286052603644784
-	@test af_median == 0.9963369963369964
+	@test af_min ≈ 0.0
+	@test af_max ≈ 1.0
+	@test af_mean ≈ 0.9286052603644784
+	@test af_median ≈ 0.9963369963369964
 
 finally
 	seqClose(f)
