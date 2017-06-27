@@ -1,5 +1,6 @@
 using Base.Test
 using JSeqArray
+using StatsBase
 
 tests = [ "misc" ]
 
