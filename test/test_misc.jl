@@ -70,7 +70,7 @@ try
 	@test isa(s, StatsBase.SummaryStats)
 	@test s.min    ≈ -0.0667281080577368
 	@test s.max    ≈ 3.3600075014863386
-	@test s.mean   ≈ -2.8998318116257576e-17
+	@test_approx_eq_eps s.mean 0.0 1e-12
 	@test s.median ≈ -0.006934683064608682
 	@test s.q25    ≈ -0.030999663540459556
 	@test s.q75    ≈ 0.016731842043406
