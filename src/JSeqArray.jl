@@ -267,6 +267,16 @@ Sets a filter to sample and/or variant.
 * `variant::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing`: variant(s) to be selected, or `nothing` for no action
 * `intersect::Bool=false`: if false, the candidate samples/variants for selection are all samples/variants; if true, the candidate samples/variants are from the selected samples/variants defined via the previous call
 * `verbose::Bool=true`: if true, show information
+# Examples
+```jldoctest
+julia> f = seqOpen(seqExample(:kg));
+
+julia> seqFilterSet2(f, sample=4:10, variant=2:6)
+Number of selected samples: 7
+Number of selected variants: 5
+
+julia> seqClose(f)
+```
 """
 function seqFilterSet2(file::TSeqGDSFile;
 		sample::Union{Void, Vector{Bool}, Vector{Int}, UnitRange{Int}}=nothing,
@@ -475,11 +485,16 @@ The variable name should be
 * "#num_allele" returns an integer vector with the numbers of distinct alleles
 The algorithm is highly optimized by blocking the computations to exploit the high-speed memory instead of disk.
 # Examples
-```julia
-julia> f = seqOpen(seqExample(:kg))
-julia> seqApply(f, "genotype", asis=:unlist) do geno
+```jldoctest
+julia> f = seqOpen(seqExample(:kg));
+
+julia> s = seqApply(f, "genotype", asis=:unlist, verbose=false) do geno
            return sum(geno)
-       end
+       end;
+
+julia> Int(sum(s))
+3083127
+
 julia> seqClose(f)
 ```
 """
