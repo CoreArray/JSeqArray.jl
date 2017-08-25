@@ -140,12 +140,15 @@ seqClose(f)
 | ...  | [»](https://github.com/CoreArray/JSeqArray.jl/blob/master/docs/index.md) |
 
 
-### More examples
+### More Examples
 
 Julia tutorial with SeqArray files: [demo/tutorial.ipynb](demo/tutorial.ipynb)
 
 Julia tutorial with SeqArray files and parallel programming: [demo/tutorial_parallel.ipynb](demo/tutorial_parallel.ipynb)
 
 JSeqArray.jl documentation: [docs/index.md](docs/index.md)
+
+
+### Other Resources
 
 Learn X in Y minutes (where X=Julia): [http://learnxinyminutes.com/docs/julia/](http://learnxinyminutes.com/docs/julia/)

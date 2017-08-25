@@ -316,7 +316,7 @@ CApply_Variant_Dosage::CApply_Variant_Dosage(CFileInfo &File):
 	CApply_Variant_Geno(File)
 {
 	fVarType = ctDosage;
-	ExtPtr.reset(sizeof(int)*CellCount);
+	ExtPtr2.reset(sizeof(int)*CellCount);
 }
 
 jl_array_t* CApply_Variant_Dosage::NeedArray()
@@ -341,7 +341,7 @@ void CApply_Variant_Dosage::ReadData(jl_array_t *val)
 
 void CApply_Variant_Dosage::ReadDosage(int *Base)
 {
-	int *p = (int *)ExtPtr.get();
+	int *p = (int *)ExtPtr2.get();
 	int missing = _ReadGenoData(p);
 
 	// count the number of reference allele
@@ -368,7 +368,7 @@ void CApply_Variant_Dosage::ReadDosage(int *Base)
 
 void CApply_Variant_Dosage::ReadDosage(C_UInt8 *Base)
 {
-	C_UInt8 *p = (C_UInt8 *)ExtPtr.get();
+	C_UInt8 *p = (C_UInt8 *)ExtPtr2.get();
 	C_UInt8 missing = _ReadGenoData(p);
 
 	// count the number of reference allele
