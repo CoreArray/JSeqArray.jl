@@ -339,60 +339,6 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 			ss[1] = NeedArrayTRUEs(dim[1]);
 		rv_ans = GDS_JArray_Read(N, NULL, NULL, ss, svCustom);
 
-	} else if (strcmp(name, "#chrom_pos")==0 || strcmp(name, "$chrom_pos")==0)
-	{
-		// ===========================================================
-		// chromosome-position
-
-		PdAbstractArray N1 = File.GetObj("chromosome", TRUE);
-		PdAbstractArray N2 = File.GetObj("position", TRUE);
-		C_Int64 n1 = GDS_Array_GetTotalCount(N1);
-		C_Int64 n2 = GDS_Array_GetTotalCount(N2);
-		if ((n1 != n2) || (n1 != File.VariantNum()))
-			throw ErrSeqArray("Invalid dimension of 'chromosome' and 'position'.");
-
-		vector<string> chr;
-		vector<C_Int32> pos;
-
-		int n = File.VariantSelNum();
-		chr.resize(n);
-		pos.resize(n);
-		C_BOOL *ss = Sel.pVariant();
-
-		GDS_Array_ReadDataEx(N1, NULL, NULL, &ss, &chr[0], svStrUTF8);
-		GDS_Array_ReadDataEx(N2, NULL, NULL, &ss, &pos[0], svInt32);
-
-		char buf1[1024] = { 0 };
-		char buf2[1024] = { 0 };
-		char *p1 = buf1, *p2 = buf2;
-		int dup = 0;
-
-		jl_value_t *atype = jl_apply_array_type(jl_string_type, 1);
-		rv_ans = jl_alloc_array_1d(atype, n1);
-		JL_GC_PUSH1(&rv_ans);
-		jl_value_t **p = (jl_value_t**)jl_array_data(rv_ans);
-
-		for (size_t i=0; i < (size_t)n1; i++,p++)
-		{
-			snprintf(p1, sizeof(buf1), "%s_%d", chr[i].c_str(), pos[i]);
-			if (strcmp(p1, p2) == 0)
-			{
-				dup ++;
-				snprintf(p1, sizeof(buf1), "%s_%d_%d", chr[i].c_str(),
-					pos[i], dup);
-				*p = jl_cstr_to_string(p1);
-				jl_gc_wb(rv_ans, *p);
-			} else {
-				char *tmp;
-				tmp = p1; p1 = p2; p2 = tmp;
-				*p = jl_cstr_to_string(p2);
-				jl_gc_wb(rv_ans, *p);
-				dup = 0;
-			}
-		}
-
-		JL_GC_POP();
-
 	} else if (strcmp(name, "#num_allele")==0 || strcmp(name, "$num_allele")==0)
 	{
 		// ===========================================================
@@ -465,6 +411,103 @@ static jl_array_t* VarGetData(CFileInfo &File, const char *name)
 			pi ++;
 		}
 */
+
+	} else if (strcmp(name, "#chrom_pos")==0 || strcmp(name, "$chrom_pos")==0)
+	{
+		// ===========================================================
+		// chromosome-position
+
+		PdAbstractArray N1 = File.GetObj("chromosome", TRUE);
+		PdAbstractArray N2 = File.GetObj("position", TRUE);
+		C_Int64 n1 = GDS_Array_GetTotalCount(N1);
+		C_Int64 n2 = GDS_Array_GetTotalCount(N2);
+		if ((n1 != n2) || (n1 != File.VariantNum()))
+			throw ErrSeqArray("Invalid dimension of 'chromosome' or 'position'.");
+
+		vector<string> chr;
+		vector<C_Int32> pos;
+
+		int n = File.VariantSelNum();
+		chr.resize(n);
+		pos.resize(n);
+		C_BOOL *ss = Sel.pVariant();
+
+		GDS_Array_ReadDataEx(N1, NULL, NULL, &ss, &chr[0], svStrUTF8);
+		GDS_Array_ReadDataEx(N2, NULL, NULL, &ss, &pos[0], svInt32);
+
+		char buf1[1024] = { 0 };
+		char buf2[1024] = { 0 };
+		char *p1 = buf1, *p2 = buf2;
+		int dup = 0;
+
+		jl_value_t *atype = jl_apply_array_type(jl_string_type, 1);
+		rv_ans = jl_alloc_array_1d(atype, n1);
+		JL_GC_PUSH1(&rv_ans);
+		jl_value_t **p = (jl_value_t**)jl_array_data(rv_ans);
+
+		for (size_t i=0; i < (size_t)n1; i++,p++)
+		{
+			snprintf(p1, sizeof(buf1), "%s:%d", chr[i].c_str(), pos[i]);
+			if (strcmp(p1, p2) == 0)
+			{
+				dup ++;
+				snprintf(p1, sizeof(buf1), "%s:%d_%d", chr[i].c_str(),
+					pos[i], dup);
+				*p = jl_cstr_to_string(p1);
+				jl_gc_wb(rv_ans, *p);
+			} else {
+				char *tmp;
+				tmp = p1; p1 = p2; p2 = tmp;
+				*p = jl_cstr_to_string(p2);
+				jl_gc_wb(rv_ans, *p);
+				dup = 0;
+			}
+		}
+
+		JL_GC_POP();
+
+	} else if (strcmp(name, "#chrom_pos_allele")==0 || strcmp(name, "$chrom_pos_allele")==0)
+	{
+		// ===========================================================
+		// chromosome-position-allele
+
+		PdAbstractArray N1 = File.GetObj("chromosome", TRUE);
+		PdAbstractArray N2 = File.GetObj("position", TRUE);
+		PdAbstractArray N3 = File.GetObj("allele", TRUE);
+		C_Int64 n1 = GDS_Array_GetTotalCount(N1);
+		C_Int64 n2 = GDS_Array_GetTotalCount(N2);
+		C_Int64 n3 = GDS_Array_GetTotalCount(N3);
+		if ((n1 != n2) || (n1 != n3) || (n1 != File.VariantNum()))
+			throw ErrSeqArray("Invalid dimension of 'chromosome', 'position' or 'allele'.");
+
+		int n = File.VariantSelNum();
+		vector<string> chr(n);
+		vector<C_Int32> pos(n);
+		vector<string> allele(n);
+
+		C_BOOL *ss = Sel.pVariant();
+		GDS_Array_ReadDataEx(N1, NULL, NULL, &ss, &chr[0], svStrUTF8);
+		GDS_Array_ReadDataEx(N2, NULL, NULL, &ss, &pos[0], svInt32);
+		GDS_Array_ReadDataEx(N3, NULL, NULL, &ss, &allele[0], svStrUTF8);
+
+		char buf[65536] = { 0 };
+		jl_value_t *atype = jl_apply_array_type(jl_string_type, 1);
+		rv_ans = jl_alloc_array_1d(atype, n1);
+		JL_GC_PUSH1(&rv_ans);
+		jl_value_t **p = (jl_value_t**)jl_array_data(rv_ans);
+
+		for (size_t i=0; i < (size_t)n1; i++,p++)
+		{
+			const char *s = allele[i].c_str();
+			for (char *p=(char*)s; *p != 0; p++)
+				if (*p == ',') *p = '_';
+			snprintf(buf, sizeof(buf), "%s:%d_%s", chr[i].c_str(), pos[i], s);
+			*p = jl_cstr_to_string(buf);
+			jl_gc_wb(rv_ans, *p);
+		}
+
+		JL_GC_POP();
+
 	} else {
 		throw ErrSeqArray(
 			"'%s' is not a standard variable name, and the standard format:\n"
